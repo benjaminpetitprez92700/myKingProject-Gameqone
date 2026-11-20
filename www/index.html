@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f2a1d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Calot</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Profils -->
+<section class="screen" id="scr-profiles">
+  <div class="brand">
+    <div class="logo-marble"></div>
+    <h1>Calot</h1>
+    <p class="tag">Le jeu de billes</p>
+  </div>
+  <h2 class="section-title">Qui joue ?</h2>
+  <div class="profile-list" id="profileList"></div>
+  <button class="btn primary" id="btnNewProfile">+ Nouveau profil</button>
+</section>
+
+<!-- Nouveau profil -->
+<section class="screen" id="scr-new">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Nouveau profil</h2><span></span></header>
+  <div class="center-col">
+    <div class="marble big" id="newPreview"></div>
+    <label class="field">
+      <span>Prénom ou pseudo</span>
+      <input id="newName" maxlength="16" autocomplete="off" placeholder="Ex. Léo">
+    </label>
+    <div class="field"><span>Couleur de ta bille</span><div class="swatches" id="swatches"></div></div>
+    <button class="btn primary" id="btnCreate">Créer le profil</button>
+  </div>
+</section>
+
+<!-- Accueil -->
+<section class="screen" id="scr-home">
+  <header class="bar"><button class="icon-btn" id="btnSwitch" aria-label="Changer de profil">⇄</button><h2></h2><button class="icon-btn" id="btnSettings" aria-label="Réglages">⚙</button></header>
+  <div class="center-col">
+    <div class="marble big" id="homeMarble"></div>
+    <h1 id="homeName"></h1>
+    <p class="muted" id="homeStars"></p>
+    <button class="btn primary huge" id="btnPlay">Jouer</button>
+    <p class="muted small">Pousse ta bille le long du parcours, franchis les ponts, les bosses et les obstacles, et touche le calot !</p>
+  </div>
+</section>
+
+<!-- Difficultés -->
+<section class="screen" id="scr-diff">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Difficulté</h2><span></span></header>
+  <div class="diff-list" id="diffList"></div>
+</section>
+
+<!-- Niveaux -->
+<section class="screen" id="scr-levels">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2 id="levelsTitle"></h2><span></span></header>
+  <div class="level-grid" id="levelGrid"></div>
+</section>
+
+<!-- Réglages -->
+<section class="screen" id="scr-settings">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Réglages</h2><span></span></header>
+  <div class="settings">
+    <label class="toggle"><span>Son</span><input type="checkbox" id="setSound"><i></i></label>
+    <label class="toggle"><span>Vibrations</span><input type="checkbox" id="setHaptics"><i></i></label>
+    <div class="field"><span>Couleur de ta bille</span><div class="swatches" id="setSwatches"></div></div>
+    <button class="btn ghost" id="btnResetProgress">Remettre la progression à zéro</button>
+    <button class="btn danger" id="btnDeleteProfile">Supprimer ce profil</button>
+  </div>
+</section>
+
+<!-- Jeu -->
+<section class="screen game" id="scr-game">
+  <canvas id="canvas"></canvas>
+  <div class="hud top">
+    <button class="icon-btn glass" id="btnPause" aria-label="Pause">❚❚</button>
+    <div class="hud-title"><b id="hudLevel"></b><span id="hudPar"></span></div>
+    <div class="chip glass" id="hudShots"></div>
+  </div>
+  <div class="hud bottom">
+    <div class="hint" id="hint">Pose ton doigt, tire vers l'arrière, relâche</div>
+    <button class="icon-btn glass" id="btnOverview" aria-label="Vue d'ensemble">👁</button>
+  </div>
+</section>
+
+<!-- Fenêtres -->
+<div class="modal" id="mdPause">
+  <div class="card">
+    <h2>Pause</h2>
+    <button class="btn primary" id="btnResume">Reprendre</button>
+    <button class="btn ghost" id="btnRestart">Recommencer</button>
+    <button class="btn ghost" id="btnQuit">Quitter le niveau</button>
+  </div>
+</div>
+
+<div class="modal" id="mdResult">
+  <div class="card">
+    <h2 id="resTitle"></h2>
+    <div class="stars big" id="resStars"></div>
+    <p id="resText" class="muted"></p>
+    <button class="btn primary" id="btnNext">Niveau suivant</button>
+    <button class="btn ghost" id="btnRetry">Rejouer</button>
+    <button class="btn ghost" id="btnLevels">Liste des niveaux</button>
+  </div>
+</div>
+
+<div class="modal" id="mdConfirm">
+  <div class="card">
+    <h2 id="cfTitle"></h2>
+    <p id="cfText" class="muted"></p>
+    <button class="btn danger" id="cfOk">Confirmer</button>
+    <button class="btn ghost" id="cfCancel">Annuler</button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

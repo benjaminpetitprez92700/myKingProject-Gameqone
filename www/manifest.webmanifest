@@ -1,0 +1,10 @@
+{
+  "name": "Calot – le jeu de billes",
+  "short_name": "Calot",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0f2a1d",
+  "theme_color": "#0f2a1d",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

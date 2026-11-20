@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Calot</string>
+    <string name="title_activity_main">Calot</string>
+    <string name="package_name">com.calot.billes</string>
+    <string name="custom_url_scheme">com.calot.billes</string>
+</resources>

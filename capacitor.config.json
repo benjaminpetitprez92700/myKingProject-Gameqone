@@ -1,0 +1,7 @@
+{
+  "appId": "com.calot.billes",
+  "appName": "Calot",
+  "webDir": "www",
+  "backgroundColor": "#0f2a1d",
+  "android": { "backgroundColor": "#0f2a1d" }
+}

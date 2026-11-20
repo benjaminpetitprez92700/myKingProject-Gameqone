@@ -1,0 +1,57 @@
+name: Appli Android (APK)
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier que tous les niveaux sont gagnables
+        run: npm run verify
+
+      - name: Copier le jeu dans le projet Android
+        run: npx cap sync android
+
+      - name: Compiler l'APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Calot.apk
+
+      - name: Garder l'APK comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Calot-apk
+          path: Calot.apk
+
+      - name: Publier l'APK dans une Release (téléchargeable depuis le téléphone)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Calot – version ${{ github.run_number }}
+          prerelease: true
+          files: Calot.apk
+          body: |
+            Télécharge **Calot.apk** sur ton téléphone Android et ouvre-le pour l'installer
+            (autorise « installer des applis inconnues » si Android le demande).
