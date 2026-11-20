@@ -46,7 +46,7 @@ function grassTile(seed) {
     for (let i = 0; i < 12; i++) { g.fillStyle = 'rgba(30,60,20,0.07)'; g.beginPath(); g.arc(r() * n, r() * n, 8 + r() * 20, 0, TAU); g.fill(); }
   });
 }
-function gravelTile(seed) {
+export function gravelTile(seed) {
   const r = rng(seed);
   return tile(96, (g, n) => {
     g.fillStyle = '#cbb894'; g.fillRect(0, 0, n, n);

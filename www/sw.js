@@ -1,7 +1,7 @@
 // Mode hors-ligne pour la version navigateur (l'appli native embarque déjà ses fichiers).
-const CACHE = 'kingarena-v9';
+const CACHE = 'kingarena-v10';
 const FILES = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/intro.js', 'js/storage.js', 'js/fx.js', 'js/music.js', 'js/tutorial.js', 'icon.svg', 'manifest.webmanifest',
-  'js/minigolf/game.js', 'js/minigolf/physics.js', 'js/minigolf/levels.js', 'js/minigolf/scenery.js', 'js/minigolf/game3d.js', 'vendor/three.module.js', 'js/billard/game.js', 'js/billard/table.js',
+  'js/minigolf/game.js', 'js/minigolf/physics.js', 'js/minigolf/levels.js', 'js/minigolf/scenery.js', 'js/minigolf/game3d.js', 'js/minigolf/realism.js', 'vendor/Sky.js', 'textures/grass.jpg', 'textures/wood.jpg', 'textures/wood_bump.jpg', 'textures/waternormals.jpg', 'vendor/three.module.js', 'js/billard/game.js', 'js/billard/table.js',
   'js/petanque/game.js', 'js/pog/game.js', 'js/pog/art.js', 'js/snake/game.js'];
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))));
 self.addEventListener('activate', (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))));

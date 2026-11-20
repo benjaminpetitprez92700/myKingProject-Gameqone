@@ -438,3 +438,11 @@ h1, h2 { margin: 0; }
 .rm-chambre { background: linear-gradient(180deg, #2b9eb3 50%, #b07a45 50%); }
 .rm-skate { background: linear-gradient(180deg, #7c7e83 50%, #a3a5aa 50%); box-shadow: inset 0 -10px 0 -4px #ff2e88; }
 .rm-roof { background: linear-gradient(180deg, #7b2ff7, #ff7eb3 50%, #0d0221 50%); }
+
+.toggle.expert { background: linear-gradient(135deg, #3b2370, #241a45); box-shadow: inset 0 0 0 1.5px rgba(255, 211, 77, .45); }
+.toggle span small { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); margin-top: 2px; }
+
+.brand-logo { width: 96px; height: 96px; border-radius: 24px; display: block; margin: 0 auto 10px; box-shadow: 0 0 30px rgba(255, 190, 40, .35), 0 10px 24px rgba(0,0,0,.5); }
+.hub-logo { display: flex; align-items: center; gap: 8px; }
+.hub-logo img { width: 30px; height: 30px; border-radius: 8px; flex: none; }
+.hub-logo { font-size: .98rem; letter-spacing: 0; }

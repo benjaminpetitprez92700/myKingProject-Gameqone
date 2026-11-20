@@ -3,7 +3,8 @@
 import * as THREE from '../../vendor/three.module.js';
 import { Game } from './game.js';
 import { HOLE_R, obstacleShapes, predict, progressAlong, shoot } from './physics.js';
-import { renderScene, rng, scatter, turfTile, sandTile, MARGIN_X, MARGIN_Y } from './scenery.js';
+import { renderScene, rng, scatter, turfTile, sandTile, gravelTile, MARGIN_X, MARGIN_Y } from './scenery.js';
+import { makeSky, makeClouds, grassGround, gravelPath, grassTufts, realTrees, bushes, pondRocks, photoTex } from './realism.js';
 import { fx } from '../fx.js';
 
 const TURF_H = 7, BEVEL = 0.6, TOP = TURF_H + BEVEL;   // hauteur du dessus du gazon
@@ -75,6 +76,7 @@ export class MiniGolf3D extends Game {
   // ---------- Construction du niveau ----------
   _prepareLevel() {
     this._dispose();
+    this.wind = null; this.realSun = null;
     const L = this.level, S = SCENES[this.diff.scene], sceneName = this.diff.scene;
     const scene = new THREE.Scene();
     this.scene = scene;
@@ -90,14 +92,21 @@ export class MiniGolf3D extends Game {
       vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: 'uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ float h = clamp(vP.y*1.6+0.1,0.0,1.0); gl_FragColor = vec4(mix(bottom, top, h),1.0); }',
     });
-    const sky = new THREE.Mesh(skyGeo, skyMat);
-    const envScene = new THREE.Scene(); envScene.add(sky.clone());
+    let sky = new THREE.Mesh(skyGeo, skyMat);
+    const real = sceneName !== 'mall';           // ciel physique réaliste en extérieur
+    if (real) {
+      const ps = sceneName === 'parc' ? makeSky(38, 200, { turbidity: 4, rayleigh: 1.2 }) : makeSky(2.5, 230, { turbidity: 9, rayleigh: 3, mie: 0.006 });
+      sky = ps.sky; this.realSun = ps.sun;
+    }
+    const envScene = new THREE.Scene(); envScene.add(real ? sky : sky.clone());
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.envRT = pmrem.fromScene(envScene, 0.02, 1, 6000);
     pmrem.dispose();
     scene.environment = this.envRT.texture;
+    if (real) envScene.remove(sky);
     scene.add(sky);
-    scene.fog = new THREE.Fog(S.fog, 700, 2600);
+    scene.fog = new THREE.Fog(sceneName === 'parc' ? '#c9dceb' : S.fog, sceneName === 'parc' ? 900 : 700, sceneName === 'parc' ? 3400 : 2600);
+    if (sceneName === 'parc') makeClouds(scene, 180, L.height / 2, L.height);
 
     // lumières
     scene.add(new THREE.HemisphereLight(S.hemi[0], S.hemi[1], S.hemi[2]));
@@ -107,10 +116,21 @@ export class MiniGolf3D extends Game {
     const sc = sun.shadow.camera; sc.left = -260; sc.right = 260; sc.top = 260; sc.bottom = -260; sc.near = 10; sc.far = 1400;
     sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
     scene.add(sun); scene.add(sun.target);
-    this.sun = sun; this.sunDir = new THREE.Vector3(...S.sunDir).normalize();
+    this.sun = sun; this.sunDir = this.realSun ? this.realSun.clone().normalize() : new THREE.Vector3(...S.sunDir).normalize();
+    if (sceneName === 'parc') { sun.color.set('#fff1dc'); sun.intensity = 3.2; }
 
     // sol : texture dessinée (gazon, marbre, routes...) + grand sol autour jusqu'à l'horizon
-    const ground = renderScene(L, sceneName, 2, { groundOnly: true, maxSide: 4096 });
+    const ground = sceneName === 'parc' ? null : renderScene(L, sceneName, 2, { groundOnly: true, maxSide: 4096 });
+    if (sceneName === 'parc') {
+      const gx0 = -MARGIN_X - 300, gz0 = -MARGIN_Y - 300, gw = 360 + (MARGIN_X + 300) * 2, gh = L.height + (MARGIN_Y + 300) * 2;
+      grassGround(scene, gx0, gz0, gw, gh);
+      const gc = gravelTile(9);
+      for (let k = 0; k < 2; k++) {
+        const pts = [], sx = k ? 400 : -60;
+        for (let y = gz0; y <= gz0 + gh; y += 40) pts.push([sx + Math.sin(y * 0.006 + k * 2) * 70 + (k ? -20 : 20), y]);
+        gravelPath(scene, pts, 26, gc);
+      }
+    } else {
     const gtex = canvasTex(ground.canvas); gtex.wrapS = gtex.wrapT = THREE.ClampToEdgeWrapping;
     gtex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const gplane = new THREE.Mesh(new THREE.PlaneGeometry(ground.w, ground.h), M({ map: gtex, roughness: sceneName === 'mall' ? 0.35 : 0.95, metalness: 0 }));
@@ -119,28 +139,30 @@ export class MiniGolf3D extends Game {
     const far = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), M({ color: S.ground, roughness: 1 }));
     far.rotation.x = -Math.PI / 2; far.position.set(180, -0.3, L.height / 2);
     add(far, false, true);
+    }
 
     // eau
     const nrm = canvasTex(cnv(256, 256, (g, w, h) => {
       const r = rng(77); g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h);
       for (let i = 0; i < 260; i++) { const x = r() * w, y = r() * h, rr = 4 + r() * 14; const gr = g.createRadialGradient(x - 2, y - 2, 0, x, y, rr); gr.addColorStop(0, 'rgba(160,160,255,0.6)'); gr.addColorStop(1, 'rgba(100,100,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill(); }
     }), 0.03, false);
-    this.waterNormal = nrm;
+    this.waterNormal = sceneName === 'parc' ? photoTex('waternormals.jpg', 0.02, false) : nrm;
     for (const l of L.lakes) {
       const geo = new THREE.CircleGeometry(1, 64); geo.rotateX(-Math.PI / 2);
-      const w = add(new THREE.Mesh(geo, M({ color: S.water, roughness: 0.06, metalness: 0.15, normalMap: nrm, normalScale: new THREE.Vector2(0.6, 0.6), envMapIntensity: 1.4 })), false, true);
+      const w = add(new THREE.Mesh(geo, M(sceneName === 'parc' ? { color: '#0f2f36', roughness: 0.12, metalness: 0, normalMap: this.waterNormal, normalScale: new THREE.Vector2(1.2, 1.2), envMapIntensity: 0.55 } : { color: S.water, roughness: 0.06, metalness: 0.15, normalMap: nrm, normalScale: new THREE.Vector2(0.6, 0.6), envMapIntensity: 1.4 })), false, true);
       w.scale.set(l.rx, 1, l.ry); w.position.set(l.x, 0.6, l.y);
       // berge
       const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 64), M({ color: sceneName === 'parc' ? '#8f8a7c' : sceneName === 'mall' ? '#f2efe8' : '#8b867b', roughness: 0.8 }));
       rim.rotation.x = Math.PI / 2; rim.scale.set(l.rx + 3, l.ry + 3, 40); rim.position.set(l.x, 0.6, l.y);
-      add(rim, false, true);
+      if (sceneName !== 'parc') add(rim, false, true);
     }
+    if (sceneName === 'parc') pondRocks(scene, L.lakes);
 
     // piste surélevée : bordure + gazon synthétique (extrusions de capsules)
     const turfT = canvasTex(turfTile(2), 1 / 16); turfT.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-    const turfMat = M({ map: turfT, roughness: 0.92, color: '#ffffff' });
-    const trimMat = M({ color: S.trim, roughness: sceneName === 'mall' ? 0.3 : 0.8, metalness: sceneName === 'mall' ? 0.8 : 0 });
-    const trimSide = M({ color: S.trimSide, roughness: 0.85 });
+    const turfMat = sceneName === 'parc' ? M({ map: photoTex('grass.jpg', 1 / 70), roughness: 0.95, color: '#a6e08a' }) : M({ map: turfT, roughness: 0.92, color: '#ffffff' });
+    const trimMat = sceneName === 'parc' ? M({ map: photoTex('wood.jpg', 1 / 60), bumpMap: photoTex('wood_bump.jpg', 1 / 60, false), bumpScale: 0.6, roughness: 0.75, color: '#c49a6c' }) : M({ color: S.trim, roughness: sceneName === 'mall' ? 0.3 : 0.8, metalness: sceneName === 'mall' ? 0.8 : 0 });
+    const trimSide = sceneName === 'parc' ? M({ map: photoTex('wood.jpg', 1 / 60), roughness: 0.8, color: '#8a6a48' }) : M({ color: S.trimSide, roughness: 0.85 });
     for (const t of L.track) {
       if (t.bridge) continue;
       const trim = add(new THREE.Mesh(extrude(capsuleShape(t.a, t.b, t.w / 2 + 5), TURF_H - 1.4, 1.2), [trimMat, trimSide]));
@@ -370,12 +392,22 @@ export class MiniGolf3D extends Game {
     };
 
     if (sceneName === 'parc') {
-      for (const o of scatter(L, r, placed, 36, [18, 32], x0, x1, y0, y1, 12)) tree(o.x, o.y, o.r);
-      for (const o of scatter(L, r, placed, 6, [12, 14], x0, x1, y0, y1)) bench(o.x, o.y, r() * TAU, '#9b6a3c');
-      for (const o of scatter(L, r, placed, 6, [4, 5], x0, x1, y0, y1, 18)) lamp(o.x, o.y);
-      for (const o of scatter(L, r, placed, 22, [5, 9], x0, x1, y0, y1, 8)) {
-        const b = add(new THREE.Mesh(geo.leaf, leafMats[Math.floor(r() * 4)])); b.scale.set(o.r, o.r * 0.7, o.r); b.position.set(o.x, o.r * 0.5, o.y);
+      const trees = scatter(L, r, placed, 34, [20, 34], x0, x1, y0, y1, 14).map((o) => ({ x: o.x, z: o.y, s: o.r }));
+      // rangée d'arbres lointains pour fermer l'horizon
+      for (let k = 0; k < 26; k++) { const side = k % 2 ? 1 : -1; trees.push({ x: 180 + side * (330 + r() * 160), z: -300 + (k / 26) * (L.height + 600), s: 30 + r() * 16 }); }
+      realTrees(this.scene, trees, { hue: 100 });
+      bushes(this.scene, scatter(L, r, placed, 26, [6, 10], x0, x1, y0, y1, 8).map((o) => ({ x: o.x, z: o.y, r: o.r })), 110);
+      const woodM = M({ map: photoTex('wood.jpg', 1), roughness: 0.7, color: '#b8875a' });
+      for (const o of scatter(L, r, placed, 6, [12, 14], x0, x1, y0, y1)) {
+        const gb = new THREE.Group();
+        for (let k = 0; k < 4; k++) { const sl = new THREE.Mesh(geo.box, woodM); sl.scale.set(30, 1.2, 2.4); sl.position.set(0, 6, -3.6 + k * 2.6); sl.castShadow = sl.receiveShadow = true; gb.add(sl); }
+        for (let k = 0; k < 3; k++) { const sl = new THREE.Mesh(geo.box, woodM); sl.scale.set(30, 2.2, 1); sl.position.set(0, 9 + k * 2.8, -5.4); sl.rotation.x = -0.15; sl.castShadow = true; gb.add(sl); }
+        for (const sx of [-12, 12]) { const leg = new THREE.Mesh(geo.box, lampMat); leg.scale.set(1.6, 6, 10); leg.position.set(sx, 3, -0.5); leg.castShadow = true; gb.add(leg); const arm = new THREE.Mesh(geo.box, lampMat); arm.scale.set(1.6, 1.4, 9); arm.position.set(sx, 9, -0.5); gb.add(arm); }
+        gb.position.set(o.x, 0, o.y); gb.rotation.y = r() * TAU; add(gb);
       }
+      for (const o of scatter(L, r, placed, 6, [4, 5], x0, x1, y0, y1, 18)) lamp(o.x, o.y);
+      this.wind = { value: 0 };
+      grassTufts(this.scene, L, this.wind, { x0: x0 - 60, x1: x1 + 60, z0: y0 - 60, z1: y1 + 60, avoid: (x, z) => placed.some((p) => Math.hypot(p.x - x, p.y - z) < p.r * 0.6) }, 2600);
     } else if (sceneName === 'mall') {
       const shops = [['CAFÉ', '#8d5524'], ['SPORT', '#e63946'], ['MODE', '#7b2cbf'], ['LIVRES', '#2a9d8f'], ['GLACES', '#ff6fa8'], ['JOUETS', '#f4a261'], ['MUSIQUE', '#264653'], ['FLEURS', '#52b788']];
       for (const o of scatter(L, r, placed, 7, [28, 32], x0, x1, y0, y1, 14)) {
@@ -596,6 +628,7 @@ export class MiniGolf3D extends Game {
     const lift = this.phase === 'won' ? Math.min(1, this.phaseT * 1.2) * 18 : 0;
     this.flag.position.y = TOP + 53 + lift; this.pole.position.y = TOP + 31 + lift;
     this.waterNormal.offset.set(t * 0.01, t * 0.006);
+    if (this.wind) this.wind.value = t;
 
     // balle
     let x = b.x, z = b.y, y = this._height(x, z) + BR, vis = true, sc = 1;
@@ -652,7 +685,7 @@ export class MiniGolf3D extends Game {
     this.pts.geometry.setDrawRange(0, k);
     this.pts.geometry.attributes.position.needsUpdate = true; this.pts.geometry.attributes.color.needsUpdate = true;
 
-    this.renderer.toneMappingExposure = this.diff.scene === 'ville' ? 1.25 : 1.0;
+    this.renderer.toneMappingExposure = this.diff.scene === 'ville' ? 1.25 : this.diff.scene === 'parc' ? 0.85 : 1.0;
     this.renderer.render(this.scene, this.camera);
   }
 }

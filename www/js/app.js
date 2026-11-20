@@ -127,9 +127,10 @@ function confirmBox(title, text, okLabel, onOk) {
 // ---------- Progression ----------
 const prof = () => store.current();
 const done = (lv) => !!prof()?.progress[lv.id];
-const levelUnlocked = (lv) => lv.index === 0 || done(LEVELS[lv.difficulty][lv.index - 1]);
+const expert = () => !!prof()?.settings.expert;
+const levelUnlocked = (lv) => expert() || lv.index === 0 || done(LEVELS[lv.difficulty][lv.index - 1]);
 function diffUnlocked(i) {
-  if (i === 0) return true;
+  if (i === 0 || expert()) return true;
   const prev = LEVELS[DIFFICULTIES[i - 1].id];
   return done(prev[prev.length - 1]);
 }
@@ -225,7 +226,7 @@ const render = {
     $('snakeSpeed').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === sp));
     const firstOpen = SNAKE_LEVELS.findIndex((_, i) => !s.levels[i]);
     $('snakeGrid').innerHTML = SNAKE_LEVELS.map((lv, i) => {
-      const r = s.levels[i], locked = i > 0 && !s.levels[i - 1];
+      const r = s.levels[i], locked = !expert() && i > 0 && !s.levels[i - 1];
       return `<button class="lvl ${locked ? 'locked' : ''} ${i === firstOpen ? 'next' : ''}" data-i="${i}">
         <div class="num">${locked ? '🔒' : i + 1}</div><div class="nm">${lv.name}</div>
         <div class="stars">${starsHtml(r?.stars || 0)}</div>
@@ -249,6 +250,7 @@ const render = {
   'scr-settings'() {
     const p = prof();
     $('setSound').checked = p.settings.sound;
+    $('setExpert').checked = !!p.settings.expert;
     $('setMusic').checked = p.settings.music !== false;
     $('setHaptics').checked = p.settings.haptics;
     swatches($('setSwatches'), p.color, (c) => store.updateProfile(p.id, { color: c }));
@@ -302,6 +304,7 @@ function applyPrefs() {
   setMusicOn(p.settings.music !== false, stack.length ? songFor(stack[stack.length - 1]) : null);
   musicButtons();
 }
+$('setExpert').onchange = (e) => { const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, expert: e.target.checked } }); fx.tap(); };
 $('setMusic').onchange = (e) => { fx.tap(); toggleMusic(e.target.checked); };
 $('btnMusic').onclick = () => { fx.tap(); toggleMusic(); };
 $('btnMusicPause').onclick = () => { fx.tap(); toggleMusic(); };
