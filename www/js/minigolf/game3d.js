@@ -4,7 +4,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { Game } from './game.js';
 import { HOLE_R, obstacleShapes, predict, progressAlong, shoot } from './physics.js';
 import { renderScene, rng, scatter, turfTile, sandTile, gravelTile, MARGIN_X, MARGIN_Y } from './scenery.js';
-import { makeSky, makeClouds, grassGround, gravelPath, grassTufts, realTrees, bushes, pondRocks, photoTex } from './realism.js';
+import { makeSky, makeClouds, grassGround, gravelPath, grassTufts, realTrees, bushes, pondRocks, photoTex, loadModel, placeModels, hdriEnvironment, impostorTrees } from './realism.js';
 import { fx } from '../fx.js';
 
 const TURF_H = 7, BEVEL = 0.6, TOP = TURF_H + BEVEL;   // hauteur du dessus du gazon
@@ -106,7 +106,12 @@ export class MiniGolf3D extends Game {
     if (real) envScene.remove(sky);
     scene.add(sky);
     scene.fog = new THREE.Fog(sceneName === 'parc' ? '#c9dceb' : S.fog, sceneName === 'parc' ? 900 : 700, sceneName === 'parc' ? 3400 : 2600);
-    if (sceneName === 'parc') makeClouds(scene, 180, L.height / 2, L.height);
+    if (sceneName === 'parc') {
+      // vrai ciel photo 360° (Poly Haven) : fond + éclairage d'ambiance
+      hdriEnvironment(this.renderer, scene, 'autumn_park', () => { scene.remove(sky); });
+      this.realSun = new THREE.Vector3(0.674, 0.55, 0.493);
+      scene.fog.color.set('#c3cfd6');
+    }
 
     // lumières
     scene.add(new THREE.HemisphereLight(S.hemi[0], S.hemi[1], S.hemi[2]));
@@ -156,7 +161,7 @@ export class MiniGolf3D extends Game {
       rim.rotation.x = Math.PI / 2; rim.scale.set(l.rx + 3, l.ry + 3, 40); rim.position.set(l.x, 0.6, l.y);
       if (sceneName !== 'parc') add(rim, false, true);
     }
-    if (sceneName === 'parc') pondRocks(scene, L.lakes);
+    if (sceneName === 'parc') this._pondRocks(L.lakes);
 
     // piste surélevée : bordure + gazon synthétique (extrusions de capsules)
     const turfT = canvasTex(turfTile(2), 1 / 16); turfT.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -325,6 +330,10 @@ export class MiniGolf3D extends Game {
       }
       const m = add(new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, 16, 24), mat));
       m.position.set(o.x, TOP + 8, o.y);
+      if (sceneName === 'parc' && !moving) {
+        // vraie souche d'arbre scannée (Poly Haven) à la place du cylindre
+        placeModels(this.scene, 'tree_stump_01', [{ x: o.x, z: o.y, y: TOP - 1 }], { width: o.r * 2.3 }).then(() => { m.visible = false; });
+      }
       return { o, m };
     }
     if (o.type === 'log') {
@@ -395,17 +404,20 @@ export class MiniGolf3D extends Game {
       const trees = scatter(L, r, placed, 34, [20, 34], x0, x1, y0, y1, 14).map((o) => ({ x: o.x, z: o.y, s: o.r }));
       // rangée d'arbres lointains pour fermer l'horizon
       for (let k = 0; k < 26; k++) { const side = k % 2 ? 1 : -1; trees.push({ x: 180 + side * (330 + r() * 160), z: -300 + (k / 26) * (L.height + 600), s: 30 + r() * 16 }); }
-      realTrees(this.scene, trees, { hue: 100 });
-      bushes(this.scene, scatter(L, r, placed, 26, [6, 10], x0, x1, y0, y1, 8).map((o) => ({ x: o.x, z: o.y, r: o.r })), 110);
+      impostorTrees(this.scene, trees.map((t) => ({ x: t.x, z: t.z, h: t.s * 4.2 + r() * 30 })));
+      const bushSpots = scatter(L, r, placed, 26, [6, 10], x0, x1, y0, y1, 8);
+      placeModels(this.scene, 'shrub_03', bushSpots.filter((_, k) => k % 2).map((o) => ({ x: o.x, z: o.y, size: o.r * 2.2 })), 16);
+      placeModels(this.scene, 'shrub_04', bushSpots.filter((_, k) => !(k % 2)).map((o) => ({ x: o.x, z: o.y, size: o.r * 2.4 })), 16);
+      placeModels(this.scene, 'painted_wooden_bench', scatter(L, r, placed, 7, [14, 16], x0, x1, y0, y1).map((o) => ({ x: o.x, z: o.y })), { width: 34 });
+      placeModels(this.scene, 'street_lamp_02', scatter(L, r, placed, 6, [4, 5], x0, x1, y0, y1, 18).map((o) => ({ x: o.x, z: o.y })), 70);
       const woodM = M({ map: photoTex('wood.jpg', 1), roughness: 0.7, color: '#b8875a' });
-      for (const o of scatter(L, r, placed, 6, [12, 14], x0, x1, y0, y1)) {
+      for (const o of []) {
         const gb = new THREE.Group();
         for (let k = 0; k < 4; k++) { const sl = new THREE.Mesh(geo.box, woodM); sl.scale.set(30, 1.2, 2.4); sl.position.set(0, 6, -3.6 + k * 2.6); sl.castShadow = sl.receiveShadow = true; gb.add(sl); }
         for (let k = 0; k < 3; k++) { const sl = new THREE.Mesh(geo.box, woodM); sl.scale.set(30, 2.2, 1); sl.position.set(0, 9 + k * 2.8, -5.4); sl.rotation.x = -0.15; sl.castShadow = true; gb.add(sl); }
         for (const sx of [-12, 12]) { const leg = new THREE.Mesh(geo.box, lampMat); leg.scale.set(1.6, 6, 10); leg.position.set(sx, 3, -0.5); leg.castShadow = true; gb.add(leg); const arm = new THREE.Mesh(geo.box, lampMat); arm.scale.set(1.6, 1.4, 9); arm.position.set(sx, 9, -0.5); gb.add(arm); }
         gb.position.set(o.x, 0, o.y); gb.rotation.y = r() * TAU; add(gb);
       }
-      for (const o of scatter(L, r, placed, 6, [4, 5], x0, x1, y0, y1, 18)) lamp(o.x, o.y);
       this.wind = { value: 0 };
       grassTufts(this.scene, L, this.wind, { x0: x0 - 60, x1: x1 + 60, z0: y0 - 60, z1: y1 + 60, avoid: (x, z) => placed.some((p) => Math.hypot(p.x - x, p.y - z) < p.r * 0.6) }, 2600);
     } else if (sceneName === 'mall') {
@@ -429,11 +441,10 @@ export class MiniGolf3D extends Game {
         const um = add(new THREE.Mesh(geo.cone, M({ color: col, roughness: 0.7, side: THREE.DoubleSide }))); um.scale.set(o.r, 8, o.r); um.position.set(o.x, 32, o.y);
         const tb = add(new THREE.Mesh(geo.cyl, M({ color: '#f2f2f2', roughness: 0.3 }))); tb.scale.set(6, 1, 6); tb.position.set(o.x, 12, o.y);
       }
-      for (const o of scatter(L, r, placed, 14, [9, 12], x0, x1, y0, y1, 10)) {
-        const pot = add(new THREE.Mesh(geo.box, M({ color: '#3a3e45', roughness: 0.4, metalness: 0.3 }))); pot.scale.set(o.r * 1.6, 10, o.r * 1.6); pot.position.set(o.x, 5, o.y);
-        for (let k = 0; k < 3; k++) { const l = add(new THREE.Mesh(geo.leaf, leafMats[k])); l.scale.setScalar(o.r * (0.6 + r() * 0.3)); l.position.set(o.x + (r() - 0.5) * 6, 14 + k * 4, o.y + (r() - 0.5) * 6); }
-      }
-      for (const o of scatter(L, r, placed, 6, [12, 14], x0, x1, y0, y1)) bench(o.x, o.y, r() < 0.5 ? 0 : Math.PI / 2, '#d8d2c6');
+      const pots = scatter(L, r, placed, 14, [9, 12], x0, x1, y0, y1, 10);
+      placeModels(this.scene, 'planter_box_01', pots.filter((_, k) => k % 2).map((o) => ({ x: o.x, z: o.y, rot: r() < 0.5 ? 0 : Math.PI / 2 })), { width: 30 });
+      placeModels(this.scene, 'potted_plant_04', pots.filter((_, k) => !(k % 2)).map((o) => ({ x: o.x, z: o.y })), 22);
+      placeModels(this.scene, 'modular_street_seating', scatter(L, r, placed, 6, [16, 18], x0, x1, y0, y1).map((o) => ({ x: o.x, z: o.y, rot: r() < 0.5 ? 0 : Math.PI / 2 })), { width: 40 });
     } else {
       const winTex = canvasTex(cnv(128, 256, (g, w, h) => {
         g.fillStyle = '#2b2f38'; g.fillRect(0, 0, w, h);
@@ -458,7 +469,9 @@ export class MiniGolf3D extends Game {
         g.position.set(o.x, 0, o.y); g.rotation.y = r() < 0.5 ? 0 : Math.PI; add(g);
       }
       for (const o of scatter(L, r, placed, 12, [14, 20], x0, x1, y0, y1, 10)) tree(o.x, o.y, o.r);
-      for (const o of scatter(L, r, placed, 10, [4, 5], x0, x1, y0, y1, 16)) lamp(o.x, o.y);
+      const lampSpots = scatter(L, r, placed, 10, [4, 5], x0, x1, y0, y1, 16);
+      placeModels(this.scene, 'street_lamp_01', lampSpots.map((o) => ({ x: o.x, z: o.y })), 78);
+      for (const o of lampSpots) lamps.push({ x: o.x, z: o.y });
       // éclairage chaud des lampadaires les plus proches de la piste
       for (const p of lamps.slice(0, 4)) {
         const pl = new THREE.PointLight('#ffb866', 4000, 220, 2); pl.position.set(p.x, 42, p.z); this.scene.add(pl);
@@ -466,12 +479,21 @@ export class MiniGolf3D extends Game {
     }
   }
 
+  _pondRocks(lakes) {
+    const spots = [];
+    for (const l of lakes) { const n = Math.round((l.rx + l.ry) * 0.28); for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + Math.random() * 0.15, k = 1.04 + Math.random() * 0.08; spots.push({ x: l.x + Math.cos(a) * l.rx * k, z: l.y + Math.sin(a) * l.ry * k, size: 4 + Math.random() * 6, y: -1 }); } }
+    placeModels(this.scene, 'rock_07', spots.filter((_, k) => k % 2), 6);
+    placeModels(this.scene, 'rock_09', spots.filter((_, k) => !(k % 2)), 6);
+  }
+
   _dispose() {
     if (!this.scene) return;
     this.scene.traverse((o) => {
+      if (o.userData.keep) return;
       if (o.geometry) o.geometry.dispose();
       const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
-      for (const m of ms) { for (const k of ['map', 'normalMap', 'bumpMap', 'emissiveMap']) m[k]?.dispose?.(); m.dispose(); }
+      for (const m of ms) {
+        if (m.userData?.keep) continue; for (const k of ['map', 'normalMap', 'bumpMap', 'emissiveMap']) m[k]?.dispose?.(); m.dispose(); }
     });
     this.envRT?.dispose();
     this.scene = null;

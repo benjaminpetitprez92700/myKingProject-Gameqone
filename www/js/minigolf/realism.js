@@ -265,3 +265,70 @@ function mergeGeos(geos) {
   if (idx.length) out.setIndex(idx);
   return out;
 }
+
+// ---------- Ressources Poly Haven (CC0) : ciel 360°, modèles 3D, arbres-imposteurs ----------
+import { GLTFLoader } from '../../vendor/GLTFLoader.js';
+import { RGBELoader } from '../../vendor/RGBELoader.js';
+
+const modelCache = {};
+export function loadModel(name) {
+  if (!modelCache[name]) {
+    modelCache[name] = new GLTFLoader().loadAsync(`models/${name}.glb`).then((g) => {
+      g.scene.traverse((o) => { o.userData.keep = true; if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      return g.scene;
+    });
+  }
+  return modelCache[name];
+}
+
+// place des copies d'un modèle ; size = hauteur visée (ou { width } pour régler la largeur)
+export async function placeModels(scene, name, spots, size, opts = {}) {
+  if (!spots.length) return [];
+  const src = await loadModel(name);
+  const box = new THREE.Box3().setFromObject(src), dim = box.getSize(new THREE.Vector3());
+  const out = [];
+  for (const sp of spots) {
+    const m = src.clone(true);
+    const target = typeof sp.size === 'number' ? sp.size : typeof size === 'number' ? size : size.width;
+    const k = typeof size === 'object' && size.width ? target / Math.max(dim.x, dim.z) : target / dim.y;
+    m.scale.setScalar(k);
+    m.position.set(sp.x - (box.min.x + dim.x / 2) * k, (sp.y || 0) - box.min.y * k, sp.z - (box.min.z + dim.z / 2) * k);
+    if (opts.rot !== false) { m.rotation.y = sp.rot ?? Math.random() * Math.PI * 2; m.position.set(sp.x, (sp.y || 0) - box.min.y * k, sp.z); }
+    scene.add(m); out.push(m);
+  }
+  return out;
+}
+
+const hdriCache = {};
+export function hdriEnvironment(renderer, scene, name, onReady) {
+  const pm = new THREE.PMREMGenerator(renderer);
+  if (!hdriCache[name]) {
+    hdriCache[name] = Promise.all([
+      new RGBELoader().loadAsync(`hdri/${name}_1k.hdr`).then((t) => { const env = pm.fromEquirectangular(t).texture; t.dispose(); env.userData.keep = true; return env; }),
+      new Promise((res) => loader.load(`hdri/${name}.jpg`, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; t.userData.keep = true; res(t); })),
+    ]);
+  }
+  hdriCache[name].then(([env, bg]) => { scene.environment = env; scene.background = bg; scene.environmentIntensity = 1; onReady?.(); pm.dispose(); });
+}
+
+// arbres réalistes : deux « photos » d'un vrai arbre 3D sur des panneaux croisés
+let treeMats = null;
+export function impostorTrees(scene, spots) {
+  if (!spots.length) return;
+  if (!treeMats) treeMats = ['front', 'side'].map((n) => {
+    const t = loader.load(`models/tree_${n}.webp`); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.keep = true;
+    const m = new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 1, metalness: 0, envMapIntensity: 0.6 });
+    m.userData.keep = true; return m;
+  });
+  const geo = new THREE.PlaneGeometry(1, 1); geo.userData.keep = true;
+  for (const sp of spots) {
+    const S = sp.h / 0.78, g = new THREE.Group();
+    for (let k = 0; k < 2; k++) {
+      const p = new THREE.Mesh(geo, treeMats[k]); p.userData.keep = true;
+      p.scale.set(S, S, 1); p.position.y = 0.391 * S; p.rotation.y = k * Math.PI / 2;
+      p.castShadow = true; p.receiveShadow = true; g.add(p);
+    }
+    g.position.set(sp.x, 0, sp.z); g.rotation.y = sp.rot ?? Math.random() * Math.PI;
+    scene.add(g);
+  }
+}

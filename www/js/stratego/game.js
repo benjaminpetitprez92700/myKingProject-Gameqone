@@ -54,7 +54,10 @@ export class Stratego {
     this.hud.setChip('Placement');
     this.hud.toast(`${this.names[side]} : touche deux de tes pièces pour les échanger`, 2400);
     this._hudScore();
-    const el = this.hud.controls(`<div class="chess-ctl"><button class="btn ghost" data-a="shuffle">🎲 Mélanger</button><button class="btn primary" data-a="ready">✅ Prêt</button></div>`);
+    const el = this.hud.controls(`<div class="setup-ctl">
+      <div class="setup-tip">Touche 2 de tes pièces pour les échanger</div>
+      <div class="setup-btns"><button class="sbtn shuffle" data-a="shuffle"><span>🎲</span>Mélanger</button><button class="sbtn ready" data-a="ready"><span>✅</span>Je suis prêt</button></div>
+    </div>`);
     el.onclick = (e) => {
       const b = e.target.closest('[data-a]'); if (!b) return; fx.tap();
       if (b.dataset.a === 'shuffle') this._setup(side);

@@ -561,3 +561,15 @@ h1, h2 { margin: 0; }
 .kbd button.ok { background: linear-gradient(180deg, #4be08a, #1f9d5a); box-shadow: 0 4px 0 #0d5a32; }
 .kbd button.del { background: linear-gradient(180deg, #ff8080, #c73b3b); box-shadow: 0 4px 0 #7a1b1b; }
 .kbd button.space { flex: 3; }
+
+/* Boutons de placement (Guerre Éclair) */
+.setup-ctl { display: flex; flex-direction: column; gap: 8px; max-width: 460px; width: 100%; margin: 0 auto; }
+.setup-tip { text-align: center; font-weight: 800; font-size: .9rem; background: rgba(0,0,0,.55); border-radius: 12px; padding: 7px 10px; color: #ffd34d; }
+.setup-btns { display: flex; gap: 10px; }
+.sbtn { flex: 1; border: 0; border-radius: 18px; padding: 15px 10px; font-size: 1.1rem; font-weight: 900; color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.sbtn span { font-size: 1.35rem; }
+.sbtn.shuffle { background: linear-gradient(180deg, #5aa8ff, #1f5fd1); box-shadow: 0 6px 0 #123a85, 0 8px 18px rgba(0,0,0,.4); }
+.sbtn.ready { flex: 1.4; background: linear-gradient(180deg, #5ef08f, #19a653); box-shadow: 0 6px 0 #0c6331, 0 0 22px rgba(80,240,140,.55); animation: readyGlow 1.6s ease-in-out infinite; }
+.sbtn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+@keyframes readyGlow { 50% { box-shadow: 0 6px 0 #0c6331, 0 0 34px rgba(80,240,140,.9); } }
