@@ -6,6 +6,20 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  golfcards: {
+    name: 'Cartes Cachées',
+    slides: [
+      { title: 'Le but', text: "Avoir le MOINS de points possible après 6 manches. Chacun a 8 cartes face cachée en 2 rangées. Au début, retourne-en 2.",
+        art: svg(`<rect width="240" height="160" fill="#1f7a4c"/>${[0,1,2,3].map(c=>[0,1].map(r=>`<rect x="${44+c*40}" y="${30+r*52}" width="32" height="46" rx="4" fill="${c+r===1||c===3&&r===0?'#fff':'#5b2a86'}" stroke="#111"/>`).join('')).join('')}${finger('t-tap')}`) },
+      { title: 'À ton tour', text: "Pioche une carte cachée, ou prends celle de la défausse. Échange-la avec une de tes cartes. Si tu as pioché et qu'elle ne te plaît pas, jette-la et retourne une de tes cartes cachées.",
+        art: svg(`<rect width="240" height="160" fill="#1f7a4c"/><rect x="50" y="40" width="44" height="62" rx="5" fill="#5b2a86" stroke="#111"/><rect x="146" y="40" width="44" height="62" rx="5" fill="#fff" stroke="#111"/><text x="168" y="80" text-anchor="middle" font-size="22" font-weight="900" fill="#c1121f">3</text><text x="72" y="125" class="t-lbl">pioche</text><text x="168" y="125" class="t-lbl">défausse</text>`) },
+      { title: 'Les valeurs', text: "Joker −5, 2 = −2, Roi = 0, As = 1, 3 à 10 = leur valeur, Valet et Dame = 10. Deux cartes identiques l'une au-dessus de l'autre : la colonne vaut 0 !",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/>${[['🃏','−5'],['2','−2'],['R','0'],['A','1'],['D','10']].map(([c,v],i)=>`<rect x="${14+i*44}" y="40" width="36" height="52" rx="5" fill="#fff"/><text x="${32+i*44}" y="74" text-anchor="middle" font-size="18" font-weight="900" fill="#c1121f">${c}</text><text x="${32+i*44}" y="115" class="t-lbl">${v}</text>`).join('')}`) },
+      { title: 'Fin de manche', text: "Quand un joueur a retourné toutes ses cartes, l'autre joue une dernière fois, puis on compte. Attention : celui qui ferme sans avoir le plus petit score voit ses points doublés !",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="80" text-anchor="middle" font-size="40" fill="#ffd34d" font-weight="900">×2 ?</text>`) },
+    ],
+  },
+
   tower: {
     name: 'Défense du Royaume',
     slides: [
