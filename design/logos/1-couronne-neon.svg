@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#2a1166"/><stop offset="1" stop-color="#05020d"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c8"/><stop offset=".5" stop-color="#ffd34d"/><stop offset="1" stop-color="#ff8a00"/></linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g filter="url(#glow)" transform="translate(256 210)">
+    <path d="M-120 60 L-120 -40 L-60 10 L0 -80 L60 10 L120 -40 L120 60 Z" fill="none" stroke="#ffd34d" stroke-width="16" stroke-linejoin="round"/>
+    <circle cx="-120" cy="-52" r="12" fill="#ff3d9a"/><circle cx="0" cy="-94" r="13" fill="#3ad7ff"/><circle cx="120" cy="-52" r="12" fill="#7dff8a"/>
+  </g>
+  <text x="256" y="395" text-anchor="middle" font-family="system-ui, Arial Black, sans-serif" font-weight="900" font-size="112" fill="url(#gold)" filter="url(#glow)" letter-spacing="6">KGA</text>
+  <text x="256" y="445" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="30" fill="#c9b8ff" letter-spacing="8">GAME ARENA</text>
+</svg>
