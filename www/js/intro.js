@@ -5,7 +5,7 @@ import { startIntroMusic, stopIntroMusic, musicPlaying } from './music.js';
 const LINES = ['THE KING', 'GAME ARENA'];
 const COLORS = ['#ffd34d', '#ff006e', '#3a86ff', '#06d6a0', '#ff9f1c', '#8338ec'];
 
-export function playIntro(canvas, onDone) {
+export function playIntro(canvas, onDone, gameCount = 12) {
   const g = canvas.getContext('2d');
   let vw, vh, dpr, t = 0, last = performance.now(), running = true, exitT = -1, boomed = false;
   const parts = [], bokeh = [], streaks = [];
@@ -241,7 +241,7 @@ export function playIntro(canvas, onDone) {
       if (ks > 0) {
         g.globalAlpha = ks * (1 - ex);
         g.font = `800 ${Math.max(13, big * 0.2)}px system-ui`; g.fillStyle = '#e9dcff'; g.textAlign = 'center';
-        g.fillText('5 JEUX  ·  1 CHAMPION', cx, ys[1] + big * 0.9 + (1 - ks) * 20);
+        g.fillText(`${gameCount} JEUX  ·  1 CHAMPION`, cx, ys[1] + big * 0.9 + (1 - ks) * 20);
         g.globalAlpha = 1;
       }
       // les 5 objets en orbite autour du logo

@@ -1,5 +1,7 @@
 // Portraits illustrés des pièces de Guerre Éclair : un personnage par grade, aux couleurs de son armée.
 
+import { paintFrance } from './art_fr.js';
+
 const SKIN = ['#f2c9a0', '#e0ac7e', '#c68c5b', '#8d5a3b', '#f5d3b5'];
 const cache = new Map();
 
@@ -137,10 +139,10 @@ function paint(g, id, S, army) {
 
 // Portrait en cache (par grade, armée et taille en pixels)
 export function portrait(id, army, px) {
-  const key = `${id}|${army.main}|${px}`;
+  const key = `${id}|${army.main}|${army.style || ''}|${px}`;
   if (cache.has(key)) return cache.get(key);
   const c = document.createElement('canvas'); c.width = c.height = px;
-  paint(c.getContext('2d'), id, px, army);
+  (army.style === 'france' ? paintFrance : paint)(c.getContext('2d'), id, px, army);
   cache.set(key, c);
   return c;
 }

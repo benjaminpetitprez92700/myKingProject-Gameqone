@@ -312,6 +312,9 @@ const render = {
     $('optPoints').style.display = curArena === 'petanque' ? '' : 'none';
     $('optRoom').style.display = curArena === 'pog' ? '' : 'none';
     $('optAssist').style.display = curArena === 'chess' ? '' : 'none';
+    $('optStyle').style.display = curArena === 'stratego' ? '' : 'none';
+    const pst = prof().settings.strategoStyle || 'france';
+    $('styleSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === pst));
     $('chessAssist').checked = !!prof().settings.chessAssist;
     const room = prof().settings.pogRoom || 'random';
     $('roomSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.r === room));
@@ -435,6 +438,10 @@ $('ptsSeg').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return; fx.tap(); ptsTarget = +b.dataset.p;
   $('ptsSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
 };
+$('styleSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
+  fx.tap(); $('styleSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoStyle: b.dataset.s } });
+}));
 $('chessAssist').onchange = (e) => { fx.tap(); const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, chessAssist: e.target.checked } }); };
 $('roomSeg').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return; fx.tap();
@@ -568,7 +575,7 @@ const hud = {
 function startArena(opts) {
   const p = prof();
   arenaOpts = {
-    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist,
+    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france',
     names: [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };
@@ -701,9 +708,10 @@ function afterIntro() {
   else resetTo('scr-profiles');
 }
 function startIntro() {
+  $('tagCount').textContent = `${GAMES.length} jeux · 1 champion`;
   stack = [];
   show('scr-intro', false);
-  playIntro($('introCanvas'), afterIntro);
+  playIntro($('introCanvas'), afterIntro, GAMES.length);
 }
 
 (async () => {

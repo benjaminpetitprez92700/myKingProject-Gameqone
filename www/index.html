@@ -22,7 +22,7 @@
   <div class="brand">
     <img class="brand-logo" src="icon.svg" alt="">
     <div class="brand-title"><small>THE KING</small>GAME ARENA</div>
-    <p class="tag">5 jeux · 1 champion</p>
+    <p class="tag" id="tagCount">12 jeux · 1 champion</p>
   </div>
   <h2 class="section-title">Qui joue ?</h2>
   <div class="profile-list" id="profileList"></div>
@@ -137,6 +137,10 @@
     </div>
     <div class="mode-card" id="optAssist">
       <label class="toggle"><span>🎓 Mode assistant<small>Note chaque coup sur 100, montre le meilleur coup et l'avantage</small></span><input type="checkbox" id="chessAssist"><i></i></label>
+    </div>
+    <div class="mode-card" id="optStyle">
+      <h3>Dessins des pièces</h3>
+      <div class="seg" id="styleSeg"><button data-s="moderne">🪖 Moderne</button><button data-s="france">🇫🇷 France 1914</button></div>
     </div>
     <div class="mode-card" id="optRoom">
       <h3>Salle</h3>

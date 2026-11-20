@@ -291,7 +291,7 @@ export class Stratego {
       // portrait illustré du personnage
       const px = Math.max(32, Math.round(s * 0.86 * this.dpr));
       g.save(); g.beginPath(); g.roundRect(-s * 0.43, -s * 0.43, s * 0.86, s * 0.86, s * 0.1); g.clip();
-      g.drawImage(portrait(p.id, { ...A, side: p.side }, px), -s * 0.43, -s * 0.43, s * 0.86, s * 0.86);
+      g.drawImage(portrait(p.id, { ...A, side: p.side, style: this.opts.pieceStyle }, px), -s * 0.43, -s * 0.43, s * 0.86, s * 0.86);
       // bandeau du nom
       g.fillStyle = 'rgba(0,0,0,0.62)'; g.fillRect(-s * 0.43, s * 0.2, s * 0.86, s * 0.23);
       g.restore();
