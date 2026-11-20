@@ -4,6 +4,7 @@ import {
 } from './physics.js';
 import { DIFFICULTIES, maxShots, starsFor } from './levels.js';
 import { fx } from '../fx.js';
+import { renderScene } from './scenery.js';
 
 const DT = 1 / 120;
 const WORLD_W = 360;
@@ -87,6 +88,14 @@ export class Game {
     this.dpr = dpr; this.vw = w; this.vh = h;
     this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(h * dpr);
     this.baseScale = Math.min(w / 380, h / 560);
+    // le décor est redessiné seulement si la résolution change nettement
+    if (this.level && (!this.sceneImg || Math.abs(this.sceneScale - this._sceneRes()) > 0.3)) this._buildScene();
+  }
+
+  _sceneRes() { return Math.min(3, this.baseScale * this.dpr); }
+  _buildScene() {
+    this.sceneScale = this._sceneRes();
+    this.sceneImg = renderScene(this.level, this.diff.scene, this.sceneScale);
   }
 
   // ---------- Cycle de vie ----------
@@ -106,6 +115,7 @@ export class Game {
     this.groundPat = this.ctx.createPattern(groundTile(this.theme), 'repeat');
     this.dirtPat = this.ctx.createPattern(dirtTile(this.theme), 'repeat');
     this.sandPat = this.ctx.createPattern(sandTile(), 'repeat');
+    this.sceneImg = null; this._buildScene();
     this.cam.x = 180; this.cam.y = level.hole[1];
     this.introFrom = level.hole[1];
     this.paused = false;
@@ -317,12 +327,10 @@ export class Game {
     this.view = { x0, y0, x1, y1 };
     const t = this.sim.t;
 
-    g.fillStyle = this.groundPat; g.fillRect(x0 - 2, y0 - 2, x1 - x0 + 4, y1 - y0 + 4);
-    this._drawLakes(g, t);
-    this._drawTrack(g);
-    this._drawZones(g, t);
-    this._drawBumps(g);
-    this._drawStart(g);
+    const sc = this.sceneImg;
+    g.fillStyle = this.theme.ground; g.fillRect(x0 - 2, y0 - 2, x1 - x0 + 4, y1 - y0 + 4);
+    g.drawImage(sc.canvas, sc.x0, sc.y0, sc.w, sc.h);
+    this._drawWaterFx(g, t);
     this._drawObstacles(g, t);
     this._drawHole(g, t);
     this._drawAim(g);
@@ -330,6 +338,30 @@ export class Game {
     this._drawFlag(g, t);
     this._drawParticles(g);
     this._drawTexts(g);
+  }
+
+  // reflets animés à la surface de l'eau (le reste du décor est figé dans l'image)
+  _drawWaterFx(g, t) {
+    for (const l of this.level.lakes) {
+      g.save(); g.beginPath(); g.ellipse(l.x, l.y, l.rx * 0.97, l.ry * 0.97, 0, 0, Math.PI * 2); g.clip();
+      g.strokeStyle = 'rgba(255,255,255,0.16)'; g.lineWidth = 1.2;
+      for (let i = 0; i < 7; i++) {
+        const yy = l.y - l.ry + ((i * 19 + t * 7) % (l.ry * 2 + 16));
+        g.beginPath();
+        for (let x = l.x - l.rx; x <= l.x + l.rx; x += 5) {
+          const y = yy + Math.sin(x * 0.08 + t * 1.6 + i * 1.7) * 2;
+          x === l.x - l.rx ? g.moveTo(x, y) : g.lineTo(x, y);
+        }
+        g.stroke();
+      }
+      for (let i = 0; i < 5; i++) {
+        const a = i * 2.3 + t * 0.4, d = 0.3 + ((i * 0.37 + t * 0.05) % 0.6);
+        const px = l.x + Math.cos(a) * l.rx * d, py = l.y + Math.sin(a * 1.3) * l.ry * d;
+        g.fillStyle = `rgba(255,255,255,${0.25 + 0.25 * Math.sin(t * 3 + i)})`;
+        g.beginPath(); g.ellipse(px, py, 2.5, 1, 0.3, 0, Math.PI * 2); g.fill();
+      }
+      g.restore();
+    }
   }
 
   _drawLakes(g, t) {
@@ -449,11 +481,13 @@ export class Game {
     for (const o of this.level.obstacles) {
       const shapes = obstacleShapes(o, t);
       const moving = !!o.move;
-      for (const sh of shapes) this._shape(g, sh, 'shadow');
+      for (const sh of shapes) if (o.type !== 'mill') this._shape(g, sh, 'shadow');
+      if (o.type === 'mill') shapes.sort((a, b) => (a.kind === 'circle' ? -1 : 0) - (b.kind === 'circle' ? -1 : 0));
       for (const sh of shapes) {
-        if (o.type === 'post') this._post(g, sh, moving);
-        else if (o.type === 'log') this._log(g, sh, moving ? '#c0392b' : '#8b5a2b');
-        else if (o.type === 'mill') sh.kind === 'circle' ? this._hub(g, sh) : this._log(g, sh, '#f1e3c6', true);
+        const scene = this.diff.scene;
+        if (o.type === 'post') this._post(g, sh, moving, scene);
+        else if (o.type === 'log') this._logThemed(g, sh, moving, scene);
+        else if (o.type === 'mill') sh.kind === 'circle' ? this._hub(g, sh) : this._blade(g, sh);
       }
     }
   }
@@ -464,7 +498,83 @@ export class Game {
     else { g.lineCap = 'round'; g.lineWidth = sh.r * 2; g.beginPath(); g.moveTo(sh.ax + 3, sh.ay + 4); g.lineTo(sh.bx + 3, sh.by + 4); g.stroke(); }
   }
 
-  _post(g, sh, moving) {
+  _post(g, sh, moving, scene) {
+    const { x, y, r } = sh;
+    if (scene === 'parc' && !moving) {
+      // souche d'arbre avec cernes
+      const gr = g.createRadialGradient(x - r * 0.3, y - r * 0.3, 1, x, y, r);
+      gr.addColorStop(0, '#d9b47c'); gr.addColorStop(0.75, '#b0844f'); gr.addColorStop(0.8, '#5a3a1e'); gr.addColorStop(1, '#3e2612');
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(110,70,35,0.5)'; g.lineWidth = 0.7;
+      for (let k = 0.2; k < 0.75; k += 0.17) { g.beginPath(); g.arc(x + r * 0.05, y, r * k, 0, Math.PI * 2); g.stroke(); }
+      return;
+    }
+    if (scene === 'mall' && !moving) {
+      // potelet chromé
+      const gr = g.createRadialGradient(x - r * 0.4, y - r * 0.4, 0.5, x, y, r);
+      gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.35, '#d5dbe2'); gr.addColorStop(0.8, '#7d8792'); gr.addColorStop(1, '#4b535c');
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r * 0.6, 3.6, 5.2); g.stroke();
+      return;
+    }
+    if (scene === 'ville' || moving) {
+      // borne de signalisation rouge et blanche
+      g.fillStyle = '#d62828'; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#f1f1f1'; g.beginPath(); g.arc(x, y, r * 0.68, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#d62828'; g.beginPath(); g.arc(x, y, r * 0.38, 0, Math.PI * 2); g.fill();
+      const gr = g.createRadialGradient(x - r * 0.4, y - r * 0.4, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(0,0,0,0.25)');
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      if (moving) { g.fillStyle = '#ffd34d'; g.beginPath(); g.arc(x, y, r * 0.15, 0, Math.PI * 2); g.fill(); }
+      return;
+    }
+    this._postBasic(g, sh, moving);
+  }
+
+  _logThemed(g, sh, moving, scene) {
+    const len = Math.hypot(sh.bx - sh.ax, sh.by - sh.ay), ang = Math.atan2(sh.by - sh.ay, sh.bx - sh.ax), r = sh.r;
+    g.save(); g.translate(sh.ax, sh.ay); g.rotate(ang);
+    if (scene === 'parc' && !moving) {
+      // rondin avec écorce
+      const gr = g.createLinearGradient(0, -r, 0, r);
+      gr.addColorStop(0, '#9c6b3d'); gr.addColorStop(0.5, '#7a4f2a'); gr.addColorStop(1, '#4d2f16');
+      g.fillStyle = gr; g.beginPath(); g.roundRect(-r, -r, len + 2 * r, 2 * r, r); g.fill();
+      g.strokeStyle = 'rgba(40,20,5,0.45)'; g.lineWidth = 0.6;
+      for (let x = 0; x < len; x += 5) { g.beginPath(); g.moveTo(x, -r * 0.7); g.lineTo(x + 3, -r * 0.1); g.stroke(); g.beginPath(); g.moveTo(x + 2, r * 0.2); g.lineTo(x + 5, r * 0.75); g.stroke(); }
+      g.fillStyle = '#d9b47c'; g.beginPath(); g.ellipse(len + r * 0.6, 0, r * 0.45, r * 0.95, 0, 0, Math.PI * 2); g.fill();
+    } else if (scene === 'mall' && !moving) {
+      // barrière de verre sur montants chromés
+      g.fillStyle = 'rgba(190,230,255,0.55)'; g.fillRect(-r * 0.6, -r * 0.55, len + r * 1.2, r * 1.1);
+      g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(-r * 0.6, -r * 0.55, len + r * 1.2, 1);
+      g.fillStyle = '#c5ccd4';
+      for (const x of [-r * 0.6, len + r * 0.6 - 3]) { g.beginPath(); g.roundRect(x - 1, -r, 5, 2 * r, 2); g.fill(); }
+    } else {
+      // séparateur de chantier rouge et blanc
+      g.fillStyle = '#f1f1f1'; g.beginPath(); g.roundRect(-r, -r, len + 2 * r, 2 * r, 3); g.fill();
+      g.save(); g.beginPath(); g.roundRect(-r, -r, len + 2 * r, 2 * r, 3); g.clip();
+      g.fillStyle = '#d62828';
+      for (let x = -r - 20; x < len + r + 20; x += 12) { g.beginPath(); g.moveTo(x, -r); g.lineTo(x + 6, -r); g.lineTo(x + 6 - 2 * r, r); g.lineTo(x - 2 * r, r); g.fill(); }
+      g.restore();
+      g.fillStyle = 'rgba(255,255,255,0.3)'; g.fillRect(-r, -r, len + 2 * r, r * 0.5);
+    }
+    g.restore();
+  }
+
+  // pale de moulin : treillis en bois avec toile
+  _blade(g, sh) {
+    const len = Math.hypot(sh.bx - sh.ax, sh.by - sh.ay), ang = Math.atan2(sh.by - sh.ay, sh.bx - sh.ax), r = sh.r;
+    g.save(); g.translate(sh.ax, sh.ay); g.rotate(ang);
+    g.fillStyle = '#6b4423'; g.fillRect(0, -1.5, len, 3);
+    for (const side of [0, len / 2 + 3]) {
+      g.fillStyle = 'rgba(245,238,220,0.92)'; g.fillRect(side + 2, -r - 2, len / 2 - 7, (r + 2) * 2);
+      g.strokeStyle = '#7a5230'; g.lineWidth = 0.8;
+      for (let x = side + 2; x < side + len / 2 - 4; x += 5) { g.beginPath(); g.moveTo(x, -r - 2); g.lineTo(x, r + 2); g.stroke(); }
+      g.beginPath(); g.moveTo(side + 2, 0); g.lineTo(side + len / 2 - 5, 0); g.stroke();
+    }
+    g.restore();
+  }
+
+  _postBasic(g, sh, moving) {
     const base = moving ? '#e74c3c' : '#9aa3ad';
     const grd = g.createRadialGradient(sh.x - sh.r * 0.35, sh.y - sh.r * 0.35, 1, sh.x, sh.y, sh.r);
     grd.addColorStop(0, shade(base, 0.25)); grd.addColorStop(1, shade(base, -0.18));
@@ -489,8 +599,18 @@ export class Game {
   }
 
   _hub(g, sh) {
-    g.fillStyle = '#5b3a1e'; g.beginPath(); g.arc(sh.x, sh.y, sh.r + 1, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#ffd34d'; g.beginPath(); g.arc(sh.x, sh.y, sh.r * 0.5, 0, Math.PI * 2); g.fill();
+    // toit du moulin vu de dessus
+    const R = sh.r;
+    g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.arc(sh.x + 4, sh.y + 6, R, 0, Math.PI * 2); g.fill();
+    for (let i = 0; i < 8; i++) {
+      g.fillStyle = i % 2 ? '#b23a3a' : '#8f2d2d';
+      g.beginPath(); g.moveTo(sh.x, sh.y); g.arc(sh.x, sh.y, R, (i / 8) * Math.PI * 2, ((i + 1) / 8) * Math.PI * 2); g.closePath(); g.fill();
+    }
+    const gr = g.createRadialGradient(sh.x - R * 0.4, sh.y - R * 0.4, 0, sh.x, sh.y, R);
+    gr.addColorStop(0, 'rgba(255,255,255,0.3)'); gr.addColorStop(1, 'rgba(0,0,0,0.2)');
+    g.fillStyle = gr; g.beginPath(); g.arc(sh.x, sh.y, R, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#3a2412'; g.beginPath(); g.arc(sh.x, sh.y, sh.r * 0.9, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffd34d'; g.beginPath(); g.arc(sh.x, sh.y, sh.r * 0.4, 0, Math.PI * 2); g.fill();
   }
 
   _marble(g, x, y, r, color, spin, dir, alpha = 1, glass = true) {

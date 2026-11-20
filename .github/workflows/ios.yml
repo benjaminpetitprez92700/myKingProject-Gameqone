@@ -1,0 +1,57 @@
+name: Appli iPhone (IPA)
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Copier le jeu dans le projet iOS
+        run: npx cap sync ios
+
+      - name: Compiler l'appli iPhone (non signée)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} | tail -n 40
+
+      - name: Emballer l'IPA
+        run: |
+          mkdir -p Payload
+          cp -R "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app" Payload/
+          zip -qry KingGameArena.ipa Payload
+
+      - name: Garder l'IPA comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KingGameArena-ipa
+          path: KingGameArena.ipa
+
+      - name: Publier l'IPA dans une Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-${{ github.run_number }}
+          name: King Game Arena iPhone – version ${{ github.run_number }}
+          prerelease: true
+          files: KingGameArena.ipa
+          body: |
+            **KingGameArena.ipa** n'est pas signé par Apple : pour l'installer sur un iPhone sans Mac,
+            utilise Sideloadly (Windows/Mac) ou AltStore avec ton identifiant Apple (gratuit, à renouveler tous les 7 jours).
+            Pour une installation permanente (TestFlight / App Store), il faut un compte Apple Developer.

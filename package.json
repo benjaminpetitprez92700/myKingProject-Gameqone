@@ -13,6 +13,7 @@
     "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.6.10",
     "@capacitor/haptics": "^7.0.5",
+    "@capacitor/ios": "^7.6.10",
     "@capacitor/preferences": "^7.0.4"
   },
   "devDependencies": {

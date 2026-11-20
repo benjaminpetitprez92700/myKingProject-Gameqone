@@ -23,16 +23,16 @@ const dip = (x, y, r, h = 1000) => ({ x, y, r, h: -h });
 
 export const DIFFICULTIES = [
   {
-    id: 'facile', name: 'Facile', subtitle: 'La plage', extraShots: 4, preview: 1.6,
-    theme: { ground: '#7cc47a', ground2: '#6db86c', dirt: '#e9cf98', rim: '#c9a465', water: '#3b9bd9', accent: '#ffd34d' },
+    id: 'facile', name: 'Facile', subtitle: 'Le parc', scene: 'parc', extraShots: 4, preview: 1.6,
+    theme: { ground: '#5c9e45', ground2: '#6db86c', dirt: '#3d9a47', rim: '#c9a465', water: '#3b9bd9', accent: '#ffd34d' },
   },
   {
-    id: 'moyen', name: 'Moyen', subtitle: 'Le jardin', extraShots: 3, preview: 0.45,
-    theme: { ground: '#4f9a57', ground2: '#468d4e', dirt: '#d9b47a', rim: '#a87f45', water: '#2f86c4', accent: '#ff9f43' },
+    id: 'moyen', name: 'Moyen', subtitle: 'Le centre commercial', scene: 'mall', extraShots: 3, preview: 0.45,
+    theme: { ground: '#e6e1d8', ground2: '#468d4e', dirt: '#3d9a47', rim: '#a87f45', water: '#2f86c4', accent: '#ff9f43' },
   },
   {
-    id: 'difficile', name: 'Difficile', subtitle: 'Le canyon', extraShots: 2, preview: 0,
-    theme: { ground: '#8a5a44', ground2: '#7d513d', dirt: '#e2b98a', rim: '#9c6b44', water: '#2a6f9e', accent: '#ff6b6b' },
+    id: 'difficile', name: 'Difficile', subtitle: 'La ville', scene: 'ville', extraShots: 2, preview: 0,
+    theme: { ground: '#2c2f38', ground2: '#7d513d', dirt: '#3d9a47', rim: '#9c6b44', water: '#2a6f9e', accent: '#ff6b6b' },
   },
 ];
 

@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">King Game Arena</string>
     <string name="title_activity_main">King Game Arena</string>
-    <string name="package_name">com.calot.billes</string>
-    <string name="custom_url_scheme">com.calot.billes</string>
+    <string name="package_name">com.kinggamearena.app</string>
+    <string name="custom_url_scheme">com.kinggamearena.app</string>
 </resources>

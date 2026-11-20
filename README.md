@@ -19,7 +19,9 @@ avec 5 jeux. Les profils (nom + couleur) et toute la progression sont sauvegard�
 | Vérifier que tous les parcours de mini golf sont gagnables | `npm run verify` |
 | Copier le jeu dans le projet Android | `npx cap sync android` |
 
-L'APK Android est compilé automatiquement par GitHub Actions à chaque push (onglet **Actions** et **Releases**).
+L'APK Android et l'IPA iPhone sont compilés automatiquement par GitHub Actions à chaque push (onglet **Releases**).
+L'APK est toujours signé avec la même clé (`android/app/kinggamearena.keystore`) : chaque version s'installe par-dessus la précédente.
+L'IPA n'est pas signée par Apple : installation via Sideloadly ou AltStore (identifiant Apple gratuit), ou TestFlight avec un compte Apple Developer.
 
 ## Structure
 
