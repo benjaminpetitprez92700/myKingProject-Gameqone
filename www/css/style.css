@@ -574,3 +574,12 @@ h1, h2 { margin: 0; }
 .sbtn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
 @keyframes readyGlow { 50% { box-shadow: 0 6px 0 #0c6331, 0 0 34px rgba(80,240,140,.9); } }
 .sbtn.big { padding: 18px 10px; font-size: 1.3rem; }
+
+.gfx-card { max-width: 440px; margin: 0 auto 14px; width: 100%; }
+#golfGfx button { display: flex; flex-direction: column; gap: 2px; color: var(--text); padding: 10px 6px; }
+#golfGfx button small { font-size: .7rem; font-weight: 600; opacity: .8; }
+#golfGfx button.sel small { opacity: 1; }
+
+.help-ingame { color: var(--accent); font-size: 1.3rem; font-weight: 900; }
+.hud.top .help-ingame { margin-left: -4px; }
+.seg button.sel small { color: var(--accent-ink); opacity: .85; }

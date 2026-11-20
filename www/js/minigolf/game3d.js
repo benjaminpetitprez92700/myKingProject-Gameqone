@@ -67,7 +67,8 @@ export class MiniGolf3D extends Game {
     const w = this.canvas.clientWidth || window.innerWidth, h = this.canvas.clientHeight || window.innerHeight;
     this.vw = w; this.vh = h; this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     if (!this.renderer) return;
-    this.renderer.setPixelRatio(this.dpr);
+    // mode Simple : résolution réduite pour les téléphones moins puissants
+    this.renderer.setPixelRatio(this._adv() ? this.dpr : Math.min(this.dpr, 1));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
     this.baseScale = Math.min(w / 380, h / 560);
@@ -77,6 +78,9 @@ export class MiniGolf3D extends Game {
   _prepareLevel() {
     this._dispose();
     this.wind = null; this.realSun = null;
+    const adv = this._adv();
+    this.renderer.shadowMap.enabled = adv;
+    this.renderer.setPixelRatio(adv ? this.dpr : Math.min(this.dpr, 1));
     const L = this.level, S = SCENES[this.diff.scene], sceneName = this.diff.scene;
     const scene = new THREE.Scene();
     this.scene = scene;
@@ -108,7 +112,8 @@ export class MiniGolf3D extends Game {
     scene.fog = new THREE.Fog(sceneName === 'parc' ? '#c9dceb' : S.fog, sceneName === 'parc' ? 900 : 700, sceneName === 'parc' ? 3400 : 2600);
     if (sceneName === 'parc') {
       // vrai ciel photo 360° (Poly Haven) : fond + éclairage d'ambiance
-      hdriEnvironment(this.renderer, scene, 'autumn_park', () => { scene.remove(sky); });
+      if (adv) hdriEnvironment(this.renderer, scene, 'autumn_park', () => { scene.remove(sky); });
+      else makeClouds(scene, 180, L.height / 2, L.height);
       this.realSun = new THREE.Vector3(0.674, 0.55, 0.493);
       scene.fog.color.set('#c3cfd6');
     }
@@ -161,7 +166,7 @@ export class MiniGolf3D extends Game {
       rim.rotation.x = Math.PI / 2; rim.scale.set(l.rx + 3, l.ry + 3, 40); rim.position.set(l.x, 0.6, l.y);
       if (sceneName !== 'parc') add(rim, false, true);
     }
-    if (sceneName === 'parc') this._pondRocks(L.lakes);
+    if (sceneName === 'parc') { if (adv) this._pondRocks(L.lakes); else pondRocks(scene, L.lakes); }
 
     // piste surélevée : bordure + gazon synthétique (extrusions de capsules)
     const turfT = canvasTex(turfTile(2), 1 / 16); turfT.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -330,7 +335,7 @@ export class MiniGolf3D extends Game {
       }
       const m = add(new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, 16, 24), mat));
       m.position.set(o.x, TOP + 8, o.y);
-      if (sceneName === 'parc' && !moving) {
+      if (sceneName === 'parc' && !moving && this._adv()) {
         // vraie souche d'arbre scannée (Poly Haven) à la place du cylindre
         placeModels(this.scene, 'tree_stump_01', [{ x: o.x, z: o.y, y: TOP - 1 }], { width: o.r * 2.3 }).then(() => { m.visible = false; });
       }
@@ -404,10 +409,12 @@ export class MiniGolf3D extends Game {
       const trees = scatter(L, r, placed, 34, [20, 34], x0, x1, y0, y1, 14).map((o) => ({ x: o.x, z: o.y, s: o.r }));
       // rangée d'arbres lointains pour fermer l'horizon
       for (let k = 0; k < 26; k++) { const side = k % 2 ? 1 : -1; trees.push({ x: 180 + side * (330 + r() * 160), z: -300 + (k / 26) * (L.height + 600), s: 30 + r() * 16 }); }
-      impostorTrees(this.scene, trees.map((t) => ({ x: t.x, z: t.z, h: t.s * 4.2 + r() * 30 })));
+      if (this._adv()) impostorTrees(this.scene, trees.map((t) => ({ x: t.x, z: t.z, h: t.s * 4.2 + r() * 30 })));
+      else for (const t of trees) tree(t.x, t.z, t.s);
       const bushSpots = scatter(L, r, placed, 26, [6, 10], x0, x1, y0, y1, 8);
-      placeModels(this.scene, 'shrub_03', bushSpots.filter((_, k) => k % 2).map((o) => ({ x: o.x, z: o.y, size: o.r * 2.2 })), 16);
-      placeModels(this.scene, 'shrub_04', bushSpots.filter((_, k) => !(k % 2)).map((o) => ({ x: o.x, z: o.y, size: o.r * 2.4 })), 16);
+      if (!this._adv()) for (const o of bushSpots) { const b = add(new THREE.Mesh(geo.leaf, leafMats[Math.floor(r() * 4)])); b.scale.set(o.r, o.r * 0.7, o.r); b.position.set(o.x, o.r * 0.5, o.y); }
+      if (this._adv()) placeModels(this.scene, 'shrub_03', bushSpots.filter((_, k) => k % 2).map((o) => ({ x: o.x, z: o.y, size: o.r * 2.2 })), 16);
+      if (this._adv()) placeModels(this.scene, 'shrub_04', bushSpots.filter((_, k) => !(k % 2)).map((o) => ({ x: o.x, z: o.y, size: o.r * 2.4 })), 16);
       placeModels(this.scene, 'painted_wooden_bench', scatter(L, r, placed, 7, [14, 16], x0, x1, y0, y1).map((o) => ({ x: o.x, z: o.y })), { width: 34 });
       placeModels(this.scene, 'street_lamp_02', scatter(L, r, placed, 6, [4, 5], x0, x1, y0, y1, 18).map((o) => ({ x: o.x, z: o.y })), 70);
       const woodM = M({ map: photoTex('wood.jpg', 1), roughness: 0.7, color: '#b8875a' });
@@ -419,7 +426,7 @@ export class MiniGolf3D extends Game {
         gb.position.set(o.x, 0, o.y); gb.rotation.y = r() * TAU; add(gb);
       }
       this.wind = { value: 0 };
-      grassTufts(this.scene, L, this.wind, { x0: x0 - 60, x1: x1 + 60, z0: y0 - 60, z1: y1 + 60, avoid: (x, z) => placed.some((p) => Math.hypot(p.x - x, p.y - z) < p.r * 0.6) }, 2600);
+      if (this._adv()) grassTufts(this.scene, L, this.wind, { x0: x0 - 60, x1: x1 + 60, z0: y0 - 60, z1: y1 + 60, avoid: (x, z) => placed.some((p) => Math.hypot(p.x - x, p.y - z) < p.r * 0.6) }, 2600);
     } else if (sceneName === 'mall') {
       const shops = [['CAFÉ', '#8d5524'], ['SPORT', '#e63946'], ['MODE', '#7b2cbf'], ['LIVRES', '#2a9d8f'], ['GLACES', '#ff6fa8'], ['JOUETS', '#f4a261'], ['MUSIQUE', '#264653'], ['FLEURS', '#52b788']];
       for (const o of scatter(L, r, placed, 7, [28, 32], x0, x1, y0, y1, 14)) {
@@ -500,6 +507,9 @@ export class MiniGolf3D extends Game {
   }
 
   stop() { super.stop(); }
+
+  // qualité graphique choisie dans le profil (« Avancé » par défaut)
+  _adv() { return this.profile?.settings?.golfGfx !== 'simple'; }
 
   // ---------- Hauteur du terrain sous la balle ----------
   _height(x, y) {

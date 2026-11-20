@@ -59,6 +59,11 @@
 <section class="screen" id="scr-diff">
   <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Mini Golf</h2><button class="icon-btn help" data-help="minigolf" aria-label="Comment jouer">?</button></header>
   <p class="muted small center">Mets la balle dans le trou en un minimum de coups. Attention aux ponts, aux bosses et aux obstacles !</p>
+  <div class="mode-card gfx-card"><h3>Graphismes</h3>
+    <div class="seg" id="golfGfx">
+      <button data-g="simple"><b>⚡ Simple</b><small>rapide, pour tous les téléphones</small></button>
+      <button data-g="avance"><b>✨ Avancé</b><small>réaliste : ciel photo, ombres, vrais objets</small></button>
+    </div></div>
   <div class="diff-list" id="diffList"></div>
 </section>
 
@@ -95,7 +100,7 @@
 
 <!-- Partie de calcul ou de dictée -->
 <section class="screen" id="scr-quiz">
-  <header class="bar"><button class="icon-btn" data-back>✕</button><h2 id="quizTitle"></h2><span></span></header>
+  <header class="bar"><button class="icon-btn" data-back>✕</button><h2 id="quizTitle"></h2><button class="icon-btn help" data-ingame-help aria-label="Règles du jeu">?</button></header>
   <div id="quizBody"></div>
 </section>
 
@@ -162,6 +167,7 @@
   <canvas id="canvas3d"></canvas>
   <div class="hud top">
     <button class="icon-btn glass" id="btnPause" aria-label="Pause">❚❚</button>
+    <button class="icon-btn glass help-ingame" data-ingame-help aria-label="Règles du jeu">?</button>
     <div class="hud-title"><b id="hudLevel"></b><span id="hudPar"></span></div>
     <div class="chip glass" id="hudShots"></div>
   </div>
@@ -176,6 +182,7 @@
   <canvas id="arena"></canvas>
   <div class="hud top">
     <button class="icon-btn glass" id="btnPause2" aria-label="Pause">❚❚</button>
+    <button class="icon-btn glass help-ingame" data-ingame-help aria-label="Règles du jeu">?</button>
     <div class="hud-title"><b id="arenaTitle"></b></div>
     <div class="chip glass" id="arenaChip"></div>
   </div>

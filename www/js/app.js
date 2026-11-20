@@ -225,6 +225,8 @@ const render = {
       </button>`).join('');
   },
   'scr-diff'() {
+    const gfx = prof().settings.golfGfx === 'simple' ? 'simple' : 'avance';
+    $('golfGfx').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.g === gfx));
     $('diffList').innerHTML = DIFFICULTIES.map((d, i) => {
       const locked = !diffUnlocked(i);
       const lvls = LEVELS[d.id];
@@ -369,6 +371,11 @@ $('btnDeleteProfile').onclick = () => {
 $('btnReplayIntro').onclick = () => startIntro();
 
 // Mini golf : difficultés et niveaux
+$('golfGfx').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return; fx.tap();
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, golfGfx: b.dataset.g } });
+  render['scr-diff']();
+};
 $('diffList').onclick = (e) => {
   const b = e.target.closest('.diff'); if (!b) return;
   const i = +b.dataset.d;
@@ -550,6 +557,16 @@ function quitGame() {
 
 $('btnPause').onclick = () => { fx.tap(); pause(); };
 $('btnPause2').onclick = () => { fx.tap(); pause(); };
+// bouton « ? » pendant la partie : met le jeu en pause, montre les règles, puis reprend
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-ingame-help]')) return;
+  fx.tap();
+  const g = active === 'golf' ? 'minigolf' : active === 'quiz' ? quizKind : curArena;
+  const game = active === 'quiz' ? null : current();
+  const wasPaused = !!game?.paused;
+  game?.setPaused(true);
+  openTutorial(g, () => { if (!wasPaused) game?.setPaused(false); });
+});
 $('btnHelpPause').onclick = () => { fx.tap(); openTutorial(active === 'golf' ? 'minigolf' : curArena); };
 $('btnResume').onclick = () => { fx.tap(); resume(); };
 $('btnRestart').onclick = () => { fx.tap(); if (active === 'golf') startLevel(curLevel); else startArena(arenaOpts); };
