@@ -66,7 +66,7 @@ const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 export class Game {
   constructor(canvas, hooks) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this._initContext();
     this.hooks = hooks;
     this.running = false;
     this.paused = false;
@@ -112,15 +112,20 @@ export class Game {
     this.particles = []; this.texts = [];
     this.aim = null;
     this.overview = this.overviewTarget = 0;
-    this.groundPat = this.ctx.createPattern(groundTile(this.theme), 'repeat');
-    this.dirtPat = this.ctx.createPattern(dirtTile(this.theme), 'repeat');
-    this.sandPat = this.ctx.createPattern(sandTile(), 'repeat');
-    this.sceneImg = null; this._buildScene();
+    this._prepareLevel();
     this.cam.x = 180; this.cam.y = level.hole[1];
     this.introFrom = level.hole[1];
     this.paused = false;
     this._emitHud();
     if (!this.running) { this.running = true; this.last = performance.now(); this.acc = 0; requestAnimationFrame(this._loop); }
+  }
+
+  _initContext() { this.ctx = this.canvas.getContext('2d'); }
+  _prepareLevel() {
+    this.groundPat = this.ctx.createPattern(groundTile(this.theme), 'repeat');
+    this.dirtPat = this.ctx.createPattern(dirtTile(this.theme), 'repeat');
+    this.sandPat = this.ctx.createPattern(sandTile(), 'repeat');
+    this.sceneImg = null; this._buildScene();
   }
 
   stop() { this.running = false; }

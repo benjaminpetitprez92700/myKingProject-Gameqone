@@ -1,6 +1,7 @@
 import * as store from './storage.js';
 import { DIFFICULTIES, LEVELS, maxShots } from './minigolf/levels.js';
 import { Game as MiniGolf } from './minigolf/game.js';
+import { MiniGolf3D } from './minigolf/game3d.js';
 import { Billard } from './billard/game.js';
 import { Petanque } from './petanque/game.js';
 import { Pog } from './pog/game.js';
@@ -304,7 +305,11 @@ function startLevel(lv) {
   $('hudPar').textContent = `${DIFFICULTIES.find((d) => d.id === lv.difficulty).name} · Par ${lv.par}`;
   $('hint').classList.toggle('hide', hintShown && store.totalStars(prof()) > 0);
   if (!golf) {
-    golf = new MiniGolf($('canvas'), {
+    const use3d = MiniGolf3D.supported() && prof().settings.golf3d !== false;
+    $('canvas').style.display = use3d ? 'none' : '';
+    $('canvas3d').style.display = use3d ? '' : 'none';
+    $('hint').textContent = use3d ? 'Glisse ← → pour viser, tire ↓ pour la puissance, relâche' : "Pose ton doigt, tire vers l'arrière, relâche";
+    golf = new (use3d ? MiniGolf3D : MiniGolf)($(use3d ? 'canvas3d' : 'canvas'), {
       onHud: ({ shots, max }) => {
         $('hudShots').textContent = `Coups ${shots} / ${max}`;
         $('hudShots').classList.toggle('warn', max - shots <= 1);

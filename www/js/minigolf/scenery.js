@@ -5,7 +5,7 @@ import { closestOnSeg } from './physics.js';
 
 export const MARGIN_X = 140, MARGIN_Y = 260;
 
-function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+export function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 const TAU = Math.PI * 2;
 
 function shade(hex, amt) {
@@ -98,7 +98,7 @@ function pavingTile() {
 }
 
 // ---------- Outils géométriques ----------
-function trackDist(level, x, y) {
+export function trackDist(level, x, y) {
   let best = Infinity;
   for (const s of level.track) {
     const c = closestOnSeg(x, y, s.a[0], s.a[1], s.b[0], s.b[1]);
@@ -106,14 +106,14 @@ function trackDist(level, x, y) {
   }
   return best;
 }
-function lakeDist(level, x, y) {
+export function lakeDist(level, x, y) {
   let best = Infinity;
   for (const l of level.lakes) best = Math.min(best, (Math.hypot((x - l.x) / l.rx, (y - l.y) / l.ry) - 1) * Math.min(l.rx, l.ry));
   return best;
 }
 
 // Place des objets là où il reste de la place (hors piste, hors eau, sans chevauchement)
-function scatter(level, r, placed, n, rad, x0, x1, y0, y1, clearance = 14) {
+export function scatter(level, r, placed, n, rad, x0, x1, y0, y1, clearance = 14) {
   const out = [];
   for (let tries = 0; tries < n * 40 && out.length < n; tries++) {
     const x = x0 + r() * (x1 - x0), y = y0 + r() * (y1 - y0), rr = rad[0] + r() * (rad[1] - rad[0]);
@@ -322,10 +322,11 @@ function bridge(g, sg, scene) {
 }
 
 // ---------- Rendu principal ----------
-export function renderScene(level, scene, scale) {
+export function renderScene(level, scene, scale, opts = {}) {
   const x0 = -MARGIN_X, y0 = -MARGIN_Y, W = 360 + MARGIN_X * 2, H = level.height + MARGIN_Y * 2;
   const maxPx = 11e6;
-  const s = Math.min(scale, Math.sqrt(maxPx / (W * H)));
+  let s = Math.min(scale, Math.sqrt(maxPx / (W * H)));
+  if (opts.maxSide) s = Math.min(s, opts.maxSide / Math.max(W, H));
   const cv = document.createElement('canvas');
   cv.width = Math.ceil(W * s); cv.height = Math.ceil(H * s);
   const g = cv.getContext('2d');
@@ -385,6 +386,12 @@ export function renderScene(level, scene, scale) {
         for (let k = -5; k <= 5; k += 2.5) { g.beginPath(); g.moveTo(mx - 6, my + k); g.lineTo(mx + 6, my + k); g.stroke(); }
       }
     }
+  }
+
+  // ---- sol seul (pour le rendu 3D : les objets en volume sont ajoutés à part) ----
+  if (opts.groundOnly) {
+    for (const l of level.lakes) pond(g, r, l, scene);
+    return { canvas: cv, x0, y0, w: W, h: H };
   }
 
   // ---- objets du décor ----
@@ -500,3 +507,5 @@ export function renderScene(level, scene, scale) {
 
   return { canvas: cv, x0, y0, w: W, h: H };
 }
+
+export { turfTile, sandTile };
