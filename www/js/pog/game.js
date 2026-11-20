@@ -1,75 +1,14 @@
 // Jeu de pogs : on frappe la pile avec le kini, les pogs qui retombent face visible sont gagnés.
 import { fx } from '../fx.js';
+import { drawFace, drawBack, drawSlammer, drawRoom, rarityOf, ROOMS } from './art.js';
+
+const POOL = 144;
 
 const PER_PLAYER = 5;
 const TILT = 0.55;            // écrasement vertical (vue en perspective)
 const SWEET = [0.78, 0.92];   // zone de puissance idéale
 const AI = { facile: { aim: 0.55, pow: 0.22 }, moyen: { aim: 0.32, pow: 0.12 }, difficile: { aim: 0.16, pow: 0.06 } };
-const PALETTES = [
-  ['#ff006e', '#ffbe0b', '#3a86ff'], ['#06d6a0', '#118ab2', '#ffd166'], ['#8338ec', '#ff006e', '#fbf8cc'],
-  ['#fb5607', '#ffbe0b', '#1d3557'], ['#e63946', '#f1faee', '#457b9d'], ['#00b4d8', '#90e0ef', '#03045e'],
-  ['#2b2d42', '#ef233c', '#edf2f4'], ['#70e000', '#38b000', '#ffff3f'], ['#ff70a6', '#ff9770', '#ffd670'],
-];
-const MOTIFS = ['spiral', 'star', 'yin', 'bolt', 'rings', 'check', 'eye', 'flame', 'num'];
-
 function rnd(a, b) { return a + Math.random() * (b - a); }
-
-// ---------- Illustrations des pogs ----------
-function drawFace(id, size) {
-  const c = document.createElement('canvas'); c.width = c.height = size;
-  const g = c.getContext('2d'), h = size / 2;
-  const pal = PALETTES[id % PALETTES.length], motif = MOTIFS[Math.floor(id / PALETTES.length) % MOTIFS.length];
-  g.save(); g.beginPath(); g.arc(h, h, h, 0, Math.PI * 2); g.clip();
-  const bg = g.createRadialGradient(h * 0.7, h * 0.6, 2, h, h, h);
-  bg.addColorStop(0, pal[2]); bg.addColorStop(1, pal[0]);
-  g.fillStyle = bg; g.fillRect(0, 0, size, size);
-  g.translate(h, h);
-  g.fillStyle = pal[1]; g.strokeStyle = pal[1]; g.lineWidth = size * 0.06; g.lineCap = 'round';
-  if (motif === 'spiral') { g.beginPath(); for (let a = 0; a < 18; a += 0.1) { const r = a * size * 0.022; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.stroke(); }
-  else if (motif === 'star') { g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? h * 0.32 : h * 0.75, a = (i * Math.PI) / 5 - Math.PI / 2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.fill(); }
-  else if (motif === 'yin') {
-    g.beginPath(); g.arc(0, 0, h * 0.7, -Math.PI / 2, Math.PI / 2); g.arc(0, h * 0.35, h * 0.35, Math.PI / 2, -Math.PI / 2, true); g.arc(0, -h * 0.35, h * 0.35, Math.PI / 2, -Math.PI / 2); g.fill();
-    g.fillStyle = pal[0]; g.beginPath(); g.arc(0, h * 0.35, h * 0.1, 0, Math.PI * 2); g.fill();
-  }
-  else if (motif === 'bolt') { g.beginPath(); g.moveTo(h * 0.15, -h * 0.8); g.lineTo(-h * 0.4, h * 0.1); g.lineTo(0, h * 0.1); g.lineTo(-h * 0.15, h * 0.8); g.lineTo(h * 0.45, -h * 0.15); g.lineTo(h * 0.05, -h * 0.15); g.closePath(); g.fill(); }
-  else if (motif === 'rings') { for (let r = h * 0.85; r > 4; r -= h * 0.22) { g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.stroke(); } }
-  else if (motif === 'check') { const k = size / 8; for (let i = -4; i < 4; i++) for (let j = -4; j < 4; j++) if ((i + j) & 1) g.fillRect(i * k, j * k, k, k); }
-  else if (motif === 'eye') { g.beginPath(); g.ellipse(0, 0, h * 0.8, h * 0.42, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = pal[0]; g.beginPath(); g.arc(0, 0, h * 0.3, 0, Math.PI * 2); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(0, 0, h * 0.13, 0, Math.PI * 2); g.fill(); }
-  else if (motif === 'flame') { for (let i = 0; i < 3; i++) { g.globalAlpha = 1 - i * 0.25; g.beginPath(); g.moveTo(0, h * 0.75 - i * 6); g.bezierCurveTo(h * 0.8 - i * 12, h * 0.2, -h * 0.1, -h * 0.1, h * 0.05, -h * 0.85 + i * 18); g.bezierCurveTo(-h * 0.6 + i * 10, -h * 0.1, -h * 0.7 + i * 10, h * 0.5, 0, h * 0.75 - i * 6); g.fill(); g.fillStyle = i ? pal[2] : pal[1]; } g.globalAlpha = 1; }
-  else { g.font = `900 ${size * 0.55}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String((id % 99) + 1), 0, size * 0.03); }
-  g.restore();
-  // brillance + bord
-  const sh = g.createLinearGradient(0, 0, size, size);
-  sh.addColorStop(0, 'rgba(255,255,255,0.35)'); sh.addColorStop(0.45, 'rgba(255,255,255,0)');
-  g.fillStyle = sh; g.beginPath(); g.arc(h, h, h, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = size * 0.04; g.beginPath(); g.arc(h, h, h - size * 0.03, 0, Math.PI * 2); g.stroke();
-  return c;
-}
-
-function drawBack(size) {
-  const c = document.createElement('canvas'); c.width = c.height = size;
-  const g = c.getContext('2d'), h = size / 2;
-  const bg = g.createRadialGradient(h * 0.7, h * 0.6, 2, h, h, h);
-  bg.addColorStop(0, '#5b2a86'); bg.addColorStop(1, '#2a0f45');
-  g.fillStyle = bg; g.beginPath(); g.arc(h, h, h, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = '#ffd34d'; g.lineWidth = size * 0.05; g.beginPath(); g.arc(h, h, h * 0.8, 0, Math.PI * 2); g.stroke();
-  g.fillStyle = '#ffd34d'; g.font = `900 ${size * 0.26}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText('POG', h, h + size * 0.01);
-  g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = size * 0.035; g.beginPath(); g.arc(h, h, h - size * 0.025, 0, Math.PI * 2); g.stroke();
-  return c;
-}
-
-function drawSlammer(size) {
-  const c = document.createElement('canvas'); c.width = c.height = size;
-  const g = c.getContext('2d'), h = size / 2;
-  const bg = g.createRadialGradient(h * 0.6, h * 0.5, 2, h, h, h);
-  bg.addColorStop(0, '#ffffff'); bg.addColorStop(0.4, '#c5ccd6'); bg.addColorStop(1, '#5a6270');
-  g.fillStyle = bg; g.beginPath(); g.arc(h, h, h, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#e63946';
-  g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? h * 0.25 : h * 0.6, a = (i * Math.PI) / 5 - Math.PI / 2; g.lineTo(h + Math.cos(a) * r, h + Math.sin(a) * r); } g.fill();
-  g.strokeStyle = '#333'; g.lineWidth = size * 0.05; g.beginPath(); g.arc(h, h, h - size * 0.03, 0, Math.PI * 2); g.stroke();
-  return c;
-}
 
 export class Pog {
   constructor(canvas, hud) {
@@ -93,14 +32,17 @@ export class Pog {
       this.slamTex = drawSlammer(Math.round(tex * 1.05));
       this.faces = {};
     }
+    if (this.room) this.roomCv = drawRoom(this.room, this.vw, this.vh, this.cx, this.cy, this.R, TILT, dpr);
   }
   face(id) { if (!this.faces[id]) this.faces[id] = drawFace(id, this.texSize); return this.faces[id]; }
 
   start(opts) {
     this.opts = opts; this.names = opts.names;
+    const rooms = Object.keys(ROOMS);
+    this.room = opts.room && ROOMS[opts.room] ? opts.room : rooms[Math.floor(Math.random() * rooms.length)];
     window.addEventListener('resize', this._onResize);
     this.resize();
-    const ids = []; while (ids.length < PER_PLAYER * 2) { const id = Math.floor(Math.random() * PALETTES.length * MOTIFS.length); if (!ids.includes(id)) ids.push(id); }
+    const ids = []; while (ids.length < PER_PLAYER * 2) { const id = Math.floor(Math.random() * POOL); if (!ids.includes(id)) ids.push(id); }
     // pile : pogs des deux joueurs en alternance, face cachée
     this.stack = ids.map((id, i) => ({ id, owner: i % 2, rot: rnd(0, Math.PI * 2) }));
     this.won = [[], []];
@@ -263,10 +205,24 @@ export class Pog {
     const sy = TILT * Math.max(0.04, Math.abs(c));
     const tex = c >= 0 ? this.face(id) : this.backTex;
     // tranche
-    g.fillStyle = '#d8d2c4';
-    g.beginPath(); g.ellipse(x, y + 3, R, R * sy, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#bfb6a3';
+    g.beginPath(); g.ellipse(x, y + 4, R, R * sy, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e9e2d2';
+    g.beginPath(); g.ellipse(x, y + 2, R, R * sy, 0, 0, Math.PI * 2); g.fill();
     g.save(); g.translate(x, y); g.scale(1, sy); g.rotate(rot);
     g.drawImage(tex, -R, -R, R * 2, R * 2);
+    const rar = c >= 0 ? rarityOf(id) : 'common';
+    if (rar !== 'common') {
+      // reflet qui balaye la surface des pogs rares
+      g.rotate(-rot);
+      g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.clip();
+      const k = ((this.t * 0.45 + id * 0.13) % 1.6) - 0.3;
+      const gr = g.createLinearGradient(-R + k * 2 * R - R * 0.5, -R, -R + k * 2 * R + R * 0.5, R);
+      if (rar === 'holo') { gr.addColorStop(0, 'rgba(255,0,170,0)'); gr.addColorStop(0.35, 'rgba(255,120,220,0.35)'); gr.addColorStop(0.5, 'rgba(120,255,255,0.5)'); gr.addColorStop(0.65, 'rgba(255,255,120,0.35)'); gr.addColorStop(1, 'rgba(0,255,170,0)'); }
+      else { gr.addColorStop(0, 'rgba(255,220,120,0)'); gr.addColorStop(0.5, 'rgba(255,240,180,0.45)'); gr.addColorStop(1, 'rgba(255,220,120,0)'); }
+      g.globalCompositeOperation = 'screen'; g.fillStyle = gr; g.fillRect(-R, -R, R * 2, R * 2);
+      g.globalCompositeOperation = 'source-over';
+    }
     g.restore();
   }
 
@@ -275,12 +231,11 @@ export class Pog {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const sx = this.shake > 0 ? (Math.random() - 0.5) * 18 * this.shake : 0, sy = this.shake > 0 ? (Math.random() - 0.5) * 18 * this.shake : 0;
     g.translate(sx, sy);
-    // fond : tapis de jeu sous une lampe
-    const bg = g.createRadialGradient(this.cx, this.cy, 20, this.cx, this.cy, Math.max(this.vw, this.vh) * 0.75);
-    bg.addColorStop(0, '#3b1f6b'); bg.addColorStop(0.55, '#1c0f36'); bg.addColorStop(1, '#09050f');
-    g.fillStyle = bg; g.fillRect(-20, -20, this.vw + 40, this.vh + 40);
-    g.strokeStyle = 'rgba(255,211,77,0.12)'; g.lineWidth = 2;
-    for (let i = 1; i <= 3; i++) { g.beginPath(); g.ellipse(this.cx, this.cy + this.R * 0.15, this.R * (1.3 + i * 0.7), this.R * (1.3 + i * 0.7) * TILT, 0, 0, Math.PI * 2); g.stroke(); }
+    // fond : salle d'ambiance (pré-dessinée) + halo de lumière sur le tapis
+    if (this.roomCv) g.drawImage(this.roomCv, 0, 0, this.vw, this.vh);
+    const spot = g.createRadialGradient(this.cx, this.cy, 0, this.cx, this.cy, this.R * 3.4);
+    spot.addColorStop(0, 'rgba(255,240,210,0.16)'); spot.addColorStop(1, 'rgba(255,240,210,0)');
+    g.fillStyle = spot; g.beginPath(); g.ellipse(this.cx, this.cy, this.R * 3.4, this.R * 3.4 * TILT, 0, 0, Math.PI * 2); g.fill();
 
     this._drawPiles(g);
 

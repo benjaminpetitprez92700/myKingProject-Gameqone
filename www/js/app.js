@@ -240,6 +240,9 @@ const render = {
     $('modeArt').className = `mode-art ${GAMES.find((g) => g.id === curArena).cls}`;
     $('modeDesc').textContent = a.desc;
     $('optPoints').style.display = curArena === 'petanque' ? '' : 'none';
+    $('optRoom').style.display = curArena === 'pog' ? '' : 'none';
+    const room = prof().settings.pogRoom || 'random';
+    $('roomSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.r === room));
     $('modeStats').textContent = gameStat(curArena);
     $('aiLevel').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.l === aiLevel));
   },
@@ -349,6 +352,11 @@ $('ptsSeg').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return; fx.tap(); ptsTarget = +b.dataset.p;
   $('ptsSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
 };
+$('roomSeg').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return; fx.tap();
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, pogRoom: b.dataset.r } });
+  render['scr-mode']();
+};
 $('btnVsAI').onclick = () => { fx.tap(); startArena({ mode: 'ai', level: aiLevel }); };
 $('btnDuo').onclick = () => { fx.tap(); startArena({ mode: 'duo', level: aiLevel, p2: $('p2Name').value.trim() || 'Joueur 2' }); };
 
@@ -411,7 +419,7 @@ const hud = {
 function startArena(opts) {
   const p = prof();
   arenaOpts = {
-    ...opts, game: curArena, target: ptsTarget,
+    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random',
     names: [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };
