@@ -1,4 +1,4 @@
-// Profils joueurs + progression. Sauvegarde dans le stockage natif (Capacitor Preferences) quand l'appli
+// Profils joueurs + progression de tous les jeux. Sauvegarde dans le stockage natif (Capacitor Preferences) quand l'appli
 // tourne sur téléphone, avec localStorage comme copie de secours (et pour le mode navigateur).
 
 const KEY = 'calot.save.v1';
@@ -43,7 +43,8 @@ export function createProfile(name, color) {
     name: name.trim().slice(0, 16) || 'Joueur',
     color,
     created: Date.now(),
-    progress: {},                      // { 'facile-1': { stars, best } }
+    progress: {},                      // mini golf : { 'facile-1': { stars, best } }
+    stats: {},                         // autres jeux : { billard: { played, wins, losses, pogs } }
     settings: { sound: true, haptics: true },
   };
   data.profiles.push(p);
@@ -63,7 +64,18 @@ export function deleteProfile(id) {
   save();
 }
 
-export function resetProgress(id) { updateProfile(id, { progress: {} }); }
+export function resetProgress(id) { updateProfile(id, { progress: {}, stats: {} }); }
+
+// Résultat d'une partie de billard / pétanque / pogs (les victoires ne comptent que contre l'ordi)
+export function recordGame(game, { mode, won, pogs }) {
+  const p = current(); if (!p) return;
+  p.stats = p.stats || {};
+  const s = p.stats[game] || (p.stats[game] = { played: 0, wins: 0, losses: 0, pogs: 0 });
+  s.played++;
+  if (mode === 'ai') { if (won) s.wins++; else s.losses++; }
+  if (pogs) s.pogs += pogs;
+  save();
+}
 
 // Enregistre un résultat ; ne garde que le meilleur. Renvoie true si c'est un nouveau record.
 export function recordResult(levelId, shots, stars) {

@@ -1,9 +1,9 @@
 // Boucle de jeu, rendu Canvas 2D, caméra et contrôles tactiles.
 import {
-  BALL_R, CALOT_R, createSim, shoot, stepSim, resetToRest, predict, obstacleShapes,
+  BALL_R, HOLE_R, createSim, shoot, stepSim, resetToRest, predict, obstacleShapes,
 } from './physics.js';
 import { DIFFICULTIES, maxShots, starsFor } from './levels.js';
-import { fx } from './fx.js';
+import { fx } from '../fx.js';
 
 const DT = 1 / 120;
 const WORLD_W = 360;
@@ -106,8 +106,8 @@ export class Game {
     this.groundPat = this.ctx.createPattern(groundTile(this.theme), 'repeat');
     this.dirtPat = this.ctx.createPattern(dirtTile(this.theme), 'repeat');
     this.sandPat = this.ctx.createPattern(sandTile(), 'repeat');
-    this.cam.x = 180; this.cam.y = level.calot[1];
-    this.introFrom = level.calot[1];
+    this.cam.x = 180; this.cam.y = level.hole[1];
+    this.introFrom = level.hole[1];
     this.paused = false;
     this._emitHud();
     if (!this.running) { this.running = true; this.last = performance.now(); this.acc = 0; requestAnimationFrame(this._loop); }
@@ -221,9 +221,8 @@ export class Game {
       if (e.strength > 120) this._dust(e.x, e.y, Math.min(10, e.strength / 60), 0.5, '#fff');
     } else if (e.type === 'win') {
       this.phase = 'won'; this.phaseT = 0; this.ended = false;
-      fx.clack(e.strength); setTimeout(() => fx.win(), 250);
-      this._confetti(this.sim.calot.x, this.sim.calot.y);
-      this._sparks(e.x, e.y);
+      fx.cup(); setTimeout(() => fx.win(), 300);
+      this._confetti(e.x, e.y);
     } else if (e.type === 'fall') {
       this.phase = 'falling'; this.phaseT = 0;
       this.fallFrom = { x: e.x, y: e.y, vx: e.vx * 0.25, vy: e.vy * 0.25, water: this._inLake(e.x, e.y) };
@@ -293,7 +292,7 @@ export class Game {
     } else {
       const b = this.sim.ball;
       ty = b.y - halfH * 0.18; // on voit plus loin devant (vers le haut)
-      if (this.phase === 'won') ty = (b.y + this.sim.calot.y) / 2;
+      if (this.phase === 'won') ty = this.level.hole[1] - halfH * 0.1;
       if (this.aim) ty += Math.sin(this.aim.angle) * this.aim.power * halfH * 0.5;
       if (this.phase === 'falling') ty = this.fallFrom.y;
     }
@@ -325,9 +324,10 @@ export class Game {
     this._drawBumps(g);
     this._drawStart(g);
     this._drawObstacles(g, t);
-    this._drawCalot(g, t);
+    this._drawHole(g, t);
     this._drawAim(g);
     this._drawBall(g);
+    this._drawFlag(g, t);
     this._drawParticles(g);
     this._drawTexts(g);
   }
@@ -501,16 +501,16 @@ export class Game {
     const grd = g.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
     grd.addColorStop(0, shade(color, 0.35)); grd.addColorStop(0.55, color); grd.addColorStop(1, shade(color, -0.3));
     g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-    // œil de chat qui tourne avec le roulement
-    g.save(); g.beginPath(); g.arc(x, y, r * 0.96, 0, Math.PI * 2); g.clip();
-    const c = Math.cos(spin), front = Math.sin(spin) > 0;
-    const ox = Math.cos(dir) * c * r * 0.75, oy = Math.sin(dir) * c * r * 0.75;
-    g.translate(x + ox, y + oy); g.rotate(dir + Math.PI / 2);
-    g.globalAlpha = alpha * (front ? 0.85 : 0.35);
-    g.fillStyle = glass ? 'rgba(255,255,255,0.75)' : shade(color, -0.35);
-    g.beginPath(); g.ellipse(0, 0, r * 0.95, r * 0.22 * Math.abs(Math.sin(spin)) + r * 0.05, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = shade(color, -0.25);
-    g.beginPath(); g.ellipse(0, 0, r * 0.7, r * 0.1 * Math.abs(Math.sin(spin)) + r * 0.03, 0, 0, Math.PI * 2); g.fill();
+    // alvéoles de balle de golf qui défilent avec le roulement
+    g.save(); g.beginPath(); g.arc(x, y, r * 0.97, 0, Math.PI * 2); g.clip();
+    g.translate(x, y); g.rotate(dir);
+    const off = ((spin * r * 0.5) % (r * 0.7) + r * 0.7) % (r * 0.7);
+    g.fillStyle = 'rgba(0,0,0,0.13)';
+    for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) {
+      const px = i * r * 0.35 - off * 0.5 + (j % 2 ? r * 0.17 : 0), py = j * r * 0.35;
+      const d = Math.hypot(px, py) / r;
+      if (d < 0.92) { g.beginPath(); g.arc(px, py, r * 0.07 * (1 - d * 0.5), 0, Math.PI * 2); g.fill(); }
+    }
     g.restore();
     g.globalAlpha = alpha;
     g.fillStyle = 'rgba(255,255,255,0.9)';
@@ -520,15 +520,36 @@ export class Game {
     g.restore();
   }
 
-  _drawCalot(g, t) {
-    const c = this.sim.calot;
+  _drawHole(g, t) {
+    const [x, y] = this.level.hole;
+    // green autour du trou
+    const grd = g.createRadialGradient(x, y, 4, x, y, 40);
+    grd.addColorStop(0, 'rgba(90,180,90,0.55)'); grd.addColorStop(1, 'rgba(90,180,90,0)');
+    g.fillStyle = grd; g.beginPath(); g.arc(x, y, 40, 0, Math.PI * 2); g.fill();
     if (this.phase !== 'won') {
       const pulse = (Math.sin(t * 3) + 1) / 2;
-      g.strokeStyle = `rgba(255,211,77,${0.25 + pulse * 0.35})`; g.lineWidth = 3;
-      g.beginPath(); g.arc(c.x, c.y, CALOT_R + 6 + pulse * 4, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = `rgba(255,255,255,${0.15 + pulse * 0.3})`; g.lineWidth = 2;
+      g.beginPath(); g.arc(x, y, HOLE_R + 7 + pulse * 4, 0, Math.PI * 2); g.stroke();
     }
-    const dir = Math.atan2(c.vy, c.vx) || 0;
-    this._marble(g, c.x, c.y, CALOT_R, '#f0c46c', c.spin, dir, 1, false);
+    g.fillStyle = '#f4f4f4'; g.beginPath(); g.arc(x, y, HOLE_R + 2, 0, Math.PI * 2); g.fill();
+    const hg = g.createRadialGradient(x - 3, y - 3, 1, x, y, HOLE_R);
+    hg.addColorStop(0, '#000'); hg.addColorStop(1, '#2a2a2a');
+    g.fillStyle = hg; g.beginPath(); g.arc(x, y, HOLE_R, 0, Math.PI * 2); g.fill();
+  }
+
+  _drawFlag(g, t) {
+    const [x, y] = this.level.hole;
+    const lift = this.phase === 'won' ? Math.min(1, this.phaseT * 1.5) * 10 : 0;
+    const top = y - 52 - lift;
+    g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 16, y + 10); g.stroke();
+    g.strokeStyle = '#f2f2f2'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(x, y - lift); g.lineTo(x, top); g.stroke();
+    const w = Math.sin(t * 5) * 2.5;
+    g.fillStyle = '#e63946';
+    g.beginPath(); g.moveTo(x, top);
+    g.quadraticCurveTo(x + 12, top + 2 + w, x + 26, top + 7 + w);
+    g.quadraticCurveTo(x + 12, top + 10 - w, x, top + 16); g.closePath(); g.fill();
   }
 
   _drawAim(g) {
@@ -579,6 +600,11 @@ export class Game {
       const p = (Math.sin(this.sim.t * 4) + 1) / 2;
       g.strokeStyle = `rgba(255,255,255,${0.2 + p * 0.4})`; g.lineWidth = 2;
       g.beginPath(); g.arc(b.x, b.y, BALL_R + 5 + p * 3, 0, Math.PI * 2); g.stroke();
+    }
+    if (this.phase === 'won') {
+      const k = Math.min(1, this.sim.sinkT / 0.35);
+      if (k < 1) this._marble(g, b.x, b.y, BALL_R * (1 - 0.45 * k), color, b.spin, dir, 1 - k * 0.8);
+      return;
     }
     this._marble(g, b.x, b.y, BALL_R, color, b.spin, dir);
   }

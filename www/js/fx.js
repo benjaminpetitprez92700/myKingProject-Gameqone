@@ -77,6 +77,23 @@ export const fx = {
     tone(2400, 0.12, { vol: 0.35 * v }); tone(3600, 0.08, { vol: 0.18 * v }); tone(1500, 0.18, { vol: 0.12 * v });
     vibrate('HEAVY', 30);
   },
+  cup() {
+    // la balle tombe et tinte au fond du trou
+    tone(1900, 0.09, { vol: 0.25 }); tone(1500, 0.09, { vol: 0.2, delay: 0.08 }); tone(1700, 0.07, { vol: 0.14, delay: 0.15 });
+    noise(0.12, { vol: 0.2, freq: 900, delay: 0.02 });
+    vibrate('HEAVY', 30);
+  },
+  // sons génériques réutilisés par les autres jeux
+  ballClick(v = 0.6) { tone(2600 + Math.random() * 400, 0.05, { vol: 0.3 * v }); tone(1700, 0.04, { vol: 0.12 * v }); },
+  cushion(v = 0.6) { tone(140, 0.08, { type: 'triangle', vol: 0.3 * v }); noise(0.05, { vol: 0.1 * v, freq: 500 }); },
+  pocket() { tone(220, 0.12, { type: 'triangle', vol: 0.3 }); noise(0.15, { vol: 0.15, freq: 300 }); tone(160, 0.2, { type: 'sine', vol: 0.2, delay: 0.08 }); vibrate('MEDIUM', 25); },
+  thud(v = 0.7) { noise(0.18, { vol: 0.45 * v, freq: 350, q: 0.8 }); tone(90, 0.15, { vol: 0.35 * v }); vibrate('MEDIUM', 20); },
+  metal(v = 0.7) { tone(3100, 0.18, { vol: 0.28 * v }); tone(4700, 0.12, { vol: 0.12 * v }); tone(1250, 0.25, { vol: 0.12 * v }); vibrate('HEAVY', 35); },
+  slam() { noise(0.25, { vol: 0.6, freq: 250, q: 0.6 }); tone(70, 0.25, { vol: 0.5 }); tone(1400, 0.05, { type: 'square', vol: 0.1 }); vibrate('HEAVY', 50); },
+  flip(i = 0) { tone(900 + i * 90, 0.05, { type: 'triangle', vol: 0.1, delay: i * 0.03 }); },
+  whoosh(d = 0.5) { if (!soundOn || !ctx) return; noise(d, { vol: 0.35, freq: 1200, q: 0.5 }); },
+  boom() { noise(0.6, { vol: 0.7, freq: 180, q: 0.5 }); tone(55, 0.6, { vol: 0.6, slide: -20 }); tone(110, 0.3, { type: 'triangle', vol: 0.25 }); },
+  gauge() { tone(1300, 0.03, { type: 'square', vol: 0.05 }); vibrate('LIGHT', 6); },
   fall() { noise(0.35, { vol: 0.3, freq: 600, q: 0.7 }); tone(400, 0.3, { slide: -300, vol: 0.12 }); vibrate('MEDIUM', 40); },
   win() {
     [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, { type: 'triangle', vol: 0.16, delay: 0.12 + i * 0.1 }));

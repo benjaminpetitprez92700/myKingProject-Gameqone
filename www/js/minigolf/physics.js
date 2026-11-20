@@ -1,14 +1,14 @@
-// Moteur physique du jeu de billes : pur (sans DOM), réutilisé par le jeu et par le vérificateur de niveaux.
+// Moteur physique du mini golf : pur (sans DOM), réutilisé par le jeu et par le vérificateur de niveaux.
 
 export const BALL_R = 9;
-export const CALOT_R = 16;
+export const HOLE_R = 12;
+const SINK_SPEED = 330;          // au-delà, la balle « lèche » le trou sans tomber
 export const MAX_SPEED = 820;      // unités/s pour un tir à 100 %
 const ROLL_DECEL = 170;            // freinage de roulement (unités/s²)
 const SAND_DECEL = 760;
 const DAMPING = 0.45;              // amortissement proportionnel (1/s)
 const STOP_SPEED = 7;
 const WALL_E = 0.62;               // restitution bois/pierre
-const CALOT_MASS = 3;
 
 // ---------- Géométrie ----------
 export function closestOnSeg(px, py, ax, ay, bx, by) {
@@ -93,7 +93,7 @@ export function createSim(level, t0 = 0) {
     level,
     t: t0,
     ball: { x: level.start[0], y: level.start[1], vx: 0, vy: 0, spin: 0 },
-    calot: { x: level.calot[0], y: level.calot[1], vx: 0, vy: 0, spin: 0 },
+    sinkT: 0,
     state: 'rest',  // rest | moving | fallen | won
     restPos: { x: level.start[0], y: level.start[1] },
   };
@@ -102,7 +102,7 @@ export function createSim(level, t0 = 0) {
 export function cloneSim(sim) {
   return {
     level: sim.level, t: sim.t, state: sim.state,
-    ball: { ...sim.ball }, calot: { ...sim.calot }, restPos: { ...sim.restPos },
+    ball: { ...sim.ball }, sinkT: sim.sinkT, restPos: { ...sim.restPos },
   };
 }
 
@@ -193,30 +193,36 @@ function integrateBody(sim, body, br, dt, events) {
 export function stepSim(sim, dt) {
   const events = [];
   sim.t += dt;
-  if (sim.state === 'moving' || sim.state === 'won') {
-    integrateBody(sim, sim.ball, BALL_R, dt, events);
-  }
   if (sim.state === 'won') {
-    integrateBody(sim, sim.calot, CALOT_R, dt, null);
+    // la balle glisse au fond du trou
+    const [hx, hy] = sim.level.hole, b = sim.ball;
+    sim.sinkT += dt;
+    b.x += (hx - b.x) * Math.min(1, dt * 14); b.y += (hy - b.y) * Math.min(1, dt * 14);
+    b.vx *= 0.8; b.vy *= 0.8;
     return events;
   }
   if (sim.state !== 'moving') return events;
+  integrateBody(sim, sim.ball, BALL_R, dt, events);
 
   const b = sim.ball;
-  // Contact avec le calot = victoire
-  const c = sim.calot;
-  const dx = b.x - c.x, dy = b.y - c.y, d = Math.hypot(dx, dy);
-  if (d < BALL_R + CALOT_R) {
-    const nx = dx / (d || 1), ny = dy / (d || 1);
-    b.x = c.x + nx * (BALL_R + CALOT_R); b.y = c.y + ny * (BALL_R + CALOT_R);
-    const rel = (b.vx - c.vx) * nx + (b.vy - c.vy) * ny;
-    if (rel < 0) {
-      const j = (-(1 + 0.85) * rel) / (1 + 1 / CALOT_MASS);
-      b.vx += j * nx; b.vy += j * ny;
-      c.vx -= (j / CALOT_MASS) * nx; c.vy -= (j / CALOT_MASS) * ny;
+  // Le trou : on tombe si on arrive assez lentement, sinon effet de lèvre
+  const [hx, hy] = sim.level.hole;
+  const dx = hx - b.x, dy = hy - b.y, d = Math.hypot(dx, dy);
+  if (d < HOLE_R) {
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp < SINK_SPEED) {
+      sim.state = 'won'; sim.sinkT = 0;
+      events.push({ type: 'win', strength: sp, x: hx, y: hy });
+      return events;
     }
-    sim.state = 'won';
-    events.push({ type: 'win', strength: -rel, x: c.x + nx * CALOT_R, y: c.y + ny * CALOT_R });
+    // la balle est déviée par le bord du trou et perd un peu de vitesse
+    const k = (1 - d / HOLE_R) * 2200 * dt;
+    b.vx += (dx / (d || 1)) * k; b.vy += (dy / (d || 1)) * k;
+    b.vx *= 0.995; b.vy *= 0.995;
+  } else if (d < HOLE_R + 9) {
+    // légère cuvette autour du trou : une balle lente qui s'arrête au bord finit dedans
+    const k = 320 * dt;
+    b.vx += (dx / d) * k; b.vy += (dy / d) * k;
     return events;
   }
 

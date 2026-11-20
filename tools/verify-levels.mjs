@@ -1,7 +1,7 @@
 // Vérifie que chaque parcours peut être gagné dans la limite de coups (recherche gloutonne en faisceau).
 // Usage : node tools/verify-levels.mjs [id-du-niveau]
-import { LEVELS, maxShots } from '../www/js/levels.js';
-import { createSim, cloneSim, shoot, stepSim, progressAlong, onTrack, resetToRest } from '../www/js/physics.js';
+import { LEVELS, maxShots } from '../www/js/minigolf/levels.js';
+import { createSim, cloneSim, shoot, stepSim, progressAlong, onTrack, resetToRest } from '../www/js/minigolf/physics.js';
 
 const DT = 1 / 120;
 function play(sim, power, angle) {
@@ -43,7 +43,7 @@ for (const list of Object.values(LEVELS)) for (const lv of list) {
   if (only && lv.id !== only) continue;
   const errs = [];
   if (!onTrack(lv, ...lv.start)) errs.push('départ hors piste');
-  if (!onTrack(lv, ...lv.calot)) errs.push('calot hors piste');
+  if (!onTrack(lv, ...lv.hole)) errs.push('trou hors piste');
   const t0 = Date.now();
   const n = errs.length ? null : solve(lv);
   if (!n) ok = false;

@@ -37,21 +37,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../Calot.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../Gameqone.apk
 
       - name: Garder l'APK comme artefact
         uses: actions/upload-artifact@v4
         with:
-          name: Calot-apk
-          path: Calot.apk
+          name: Gameqone.apk
+          path: Gameqone.apk
 
       - name: Publier l'APK dans une Release (téléchargeable depuis le téléphone)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Calot – version ${{ github.run_number }}
+          name: Gameqone – version ${{ github.run_number }}
           prerelease: true
-          files: Calot.apk
+          files: Gameqone.apk
           body: |
-            Télécharge **Calot.apk** sur ton téléphone Android et ouvre-le pour l'installer
+            Télécharge **Gameqone.apk** sur ton téléphone Android et ouvre-le pour l'installer
             (autorise « installer des applis inconnues » si Android le demande).

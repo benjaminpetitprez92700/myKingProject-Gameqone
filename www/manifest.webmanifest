@@ -1,10 +1,10 @@
 {
-  "name": "Calot – le jeu de billes",
-  "short_name": "Calot",
+  "name": "Gameqone",
+  "short_name": "Gameqone",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "portrait",
-  "background_color": "#0f2a1d",
-  "theme_color": "#0f2a1d",
+  "background_color": "#0b0618",
+  "theme_color": "#0b0618",
   "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }
