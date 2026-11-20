@@ -19,7 +19,7 @@ export class Chess {
     this.dpr = dpr; this.vw = this.canvas.clientWidth; this.vh = this.canvas.clientHeight;
     if (this.vw < 50) { requestAnimationFrame(() => this.running && this.resize()); return; }
     this.canvas.width = Math.round(this.vw * dpr); this.canvas.height = Math.round(this.vh * dpr);
-    const top = 130, bottom = 110;
+    const top = 130, bottom = 176;
     this.size = Math.floor(Math.min(this.vw - 20, this.vh - top - bottom) / 8) * 8;
     this.cell = this.size / 8;
     this.ox = Math.round((this.vw - this.size) / 2);
@@ -50,6 +50,8 @@ export class Chess {
   _refresh() {
     const s = status(this.st);
     this.moves = s.over ? [] : s.moves;
+    // un échec et mat en un coup est-il possible pour le joueur humain ? (pour le signaler s'il le rate)
+    this.mateMoves = !s.over && !this._aiTurn() ? this.moves.filter((m) => this._isMate(m)) : [];
     const piece = (c) => this.captured[c].map((p) => GLYPH[p.toLowerCase()]).join('');
     const panel = (c, i) => `<div class="sp ${this.st.turn === c && !s.over ? 'on' : ''}"><b>${c === 'w' ? '⚪' : '⚫'} ${this.names[i]}</b><div class="balls cap">${piece(c === 'w' ? 'b' : 'w') || '<span class="muted">—</span>'}</div></div>`;
     this.hud.setScore(panel('w', 0) + panel('b', 1));
@@ -64,7 +66,7 @@ export class Chess {
         if (!this.running) return;
         const m = bestMove(this.st, this.opts.level);
         this.thinking = false;
-        if (m) this._play(m);
+        if (m) this._play(m, true);
       }, 450);
     }
   }
@@ -124,7 +126,20 @@ export class Chess {
     };
   }
 
-  _play(m) {
+  _isMate(m) {
+    makeMove(this.st, m);
+    const s = status(this.st);
+    undoMove(this.st);
+    return s.over && s.reason === 'mat';
+  }
+
+  _play(m, byAI = false) {
+    // le joueur avait un mat en 1 et ne l'a pas joué : on le lui montre, la partie continue
+    if (!byAI && this.mateMoves?.length && !this.mateMoves.some((x) => x.from === m.from && x.to === m.to && x.promo === m.promo)) {
+      const best = this.mateMoves[0];
+      this.missed = { from: best.from, to: best.to, label: moveLabel(this.st, best) + '#', t: 0, who: this.st.turn };
+      setTimeout(() => fx.gauge(), 400);
+    } else if (!byAI) this.missed = null;
     this.labels.push(moveLabel(this.st, m));
     if (m.cap) this.captured[colorOf(m.piece)].push(m.cap);
     this.anim = { m, t: 0, piece: m.promo || m.piece };
@@ -155,6 +170,7 @@ export class Chess {
     const dt = Math.min(0.05, (now - this.last_t) / 1000); this.last_t = now;
     if (!this.paused) {
       this.t += dt;
+      if (this.missed) { this.missed.t += dt; if (this.missed.t > 7) this.missed = null; }
       if (this.anim) { this.anim.t += dt / 0.22; if (this.anim.t >= 1) { this.anim = null; this._refresh(); } }
     }
     this._render();
@@ -198,6 +214,29 @@ export class Chess {
     g.restore();
   }
 
+  // flèche dorée sur le plateau + bandeau d'explication sur le côté
+  _renderMissed(g, X, Y, cs) {
+    const M = this.missed, k = Math.min(1, M.t / 0.3), fade = M.t > 6 ? 1 - (M.t - 6) : 1;
+    g.save(); g.globalAlpha = k * fade;
+    const x0 = X(M.from) + cs / 2, y0 = Y(M.from) + cs / 2, x1 = X(M.to) + cs / 2, y1 = Y(M.to) + cs / 2;
+    for (const sq of [M.from, M.to]) { g.strokeStyle = '#ffb703'; g.lineWidth = 3; g.strokeRect(X(sq) + 2, Y(sq) + 2, cs - 4, cs - 4); }
+    const a = Math.atan2(y1 - y0, x1 - x0), pulse = 1 + 0.08 * Math.sin(M.t * 6);
+    g.strokeStyle = 'rgba(255,183,3,0.9)'; g.lineWidth = cs * 0.16 * pulse; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1 - Math.cos(a) * cs * 0.35, y1 - Math.sin(a) * cs * 0.35); g.stroke();
+    g.fillStyle = 'rgba(255,183,3,0.95)'; g.beginPath();
+    g.moveTo(x1, y1); g.lineTo(x1 - Math.cos(a - 0.5) * cs * 0.5, y1 - Math.sin(a - 0.5) * cs * 0.5); g.lineTo(x1 - Math.cos(a + 0.5) * cs * 0.5, y1 - Math.sin(a + 0.5) * cs * 0.5); g.fill();
+    // bandeau sur le côté du plateau
+    const bw = Math.min(this.vw - 20, 340), bx = (this.vw - bw) / 2, by = this.oy + this.size + 22;
+    g.globalAlpha = k * fade;
+    g.fillStyle = 'rgba(40,24,0,0.92)'; g.strokeStyle = '#ffb703'; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(bx, by, bw, 54, 14); g.fill(); g.stroke();
+    g.fillStyle = '#ffd34d'; g.font = '900 15px system-ui'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    g.fillText('💡 Échec et mat raté !', bx + 14, by + 17);
+    g.fillStyle = '#fff'; g.font = '600 13px system-ui';
+    g.fillText(`${this.names[M.who === 'w' ? 0 : 1]} pouvait jouer ${M.label}. La partie continue.`, bx + 14, by + 38, bw - 24);
+    g.restore();
+  }
+
   _render() {
     const g = this.ctx, d = this.dpr, cs = this.cell;
     g.setTransform(d, 0, 0, d, 0, 0);
@@ -231,6 +270,7 @@ export class Chess {
       const x = X(a.m.from) + (X(a.m.to) - X(a.m.from)) * k, y = Y(a.m.from) + (Y(a.m.to) - Y(a.m.from)) * k;
       this._piece(g, a.piece, x + cs / 2, y + cs / 2, Math.sin(k * Math.PI) * cs * 0.25);
     }
+    if (this.missed) this._renderMissed(g, X, Y, cs);
     // coups possibles
     for (const m of this.targets) {
       const x = X(m.to) + cs / 2, y = Y(m.to) + cs / 2;
