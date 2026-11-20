@@ -1,7 +1,7 @@
-// Intro animée : les 4 objets des jeux arrivent en spirale, se percutent, et le logo explose à l'écran.
+// Intro animée « The King Game Arena » : les 5 objets des jeux arrivent en spirale, se percutent, et le logo explose à l'écran.
 import { fx, unlockAudio } from './fx.js';
 
-const TITLE = 'GAMEQONE';
+const LINES = ['THE KING', 'GAME ARENA'];
 const COLORS = ['#ffd34d', '#ff006e', '#3a86ff', '#06d6a0', '#ff9f1c', '#8338ec'];
 
 export function playIntro(canvas, onDone) {
@@ -17,7 +17,7 @@ export function playIntro(canvas, onDone) {
   for (let i = 0; i < 40; i++) bokeh.push({ x: Math.random(), y: Math.random(), r: 2 + Math.random() * 6, s: 0.02 + Math.random() * 0.05, c: COLORS[i % COLORS.length], p: Math.random() * 6 });
   for (let i = 0; i < 90; i++) streaks.push({ a: Math.random() * Math.PI * 2, d: Math.random(), v: 0.6 + Math.random() * 1.4, w: 1 + Math.random() * 2 });
 
-  const T_HIT = 1.45, T_LOGO = 1.55, T_IDLE = 2.9;
+  const T_HIT = 1.45, T_LOGO = 1.55, T_IDLE = 3.3;
 
   function tap() {
     unlockAudio();
@@ -67,7 +67,44 @@ export function playIntro(canvas, onDone) {
     g.strokeStyle = 'rgba(30,40,50,0.45)'; g.lineWidth = r * 0.07;
     g.beginPath(); g.ellipse(x, y, r, Math.abs(Math.cos(rot)) * r * 0.5 + 1, 0, 0, Math.PI * 2); g.stroke();
   }
-  const OBJS = [golf, pog, eight, boule];
+  function snake(x, y, r, rot) {
+    const cols = ['#ffbe0b', '#3a86ff', '#ff006e'];
+    for (let i = 3; i >= 1; i--) {
+      const a = rot * 0.5 + Math.PI + Math.sin(rot + i) * 0.4;
+      const px = x + Math.cos(a) * r * 1.3 * i, py = y + Math.sin(a) * r * 1.3 * i;
+      const gr = g.createRadialGradient(px - r * 0.2, py - r * 0.2, 1, px, py, r * 0.7);
+      gr.addColorStop(0, '#fff'); gr.addColorStop(0.3, cols[i - 1]); gr.addColorStop(1, cols[i - 1]);
+      g.fillStyle = gr; g.beginPath(); g.arc(px, py, r * (0.75 - i * 0.06), 0, Math.PI * 2); g.fill();
+    }
+    const gr = g.createRadialGradient(x - r * 0.3, y - r * 0.3, 1, x, y, r);
+    gr.addColorStop(0, '#b8ffd2'); gr.addColorStop(0.4, '#2ec27e'); gr.addColorStop(1, '#14653f');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    const d = rot * 0.5;
+    for (const sgn of [-1, 1]) {
+      const ex = x + Math.cos(d) * r * 0.3 - Math.sin(d) * r * 0.42 * sgn, ey = y + Math.sin(d) * r * 0.3 + Math.cos(d) * r * 0.42 * sgn;
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, ey, r * 0.25, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#111'; g.beginPath(); g.arc(ex + Math.cos(d) * r * 0.08, ey + Math.sin(d) * r * 0.08, r * 0.12, 0, Math.PI * 2); g.fill();
+    }
+  }
+  function crown(x, y, w, alpha) {
+    if (alpha <= 0) return;
+    g.save(); g.globalAlpha = alpha; g.translate(x, y);
+    const h = w * 0.62;
+    g.shadowColor = 'rgba(255,190,40,0.9)'; g.shadowBlur = 22;
+    const gr = g.createLinearGradient(0, -h / 2, 0, h / 2);
+    gr.addColorStop(0, '#fff3b0'); gr.addColorStop(0.5, '#ffc928'); gr.addColorStop(1, '#d98a00');
+    g.fillStyle = gr; g.strokeStyle = '#5a2d00'; g.lineWidth = w * 0.05; g.lineJoin = 'round';
+    g.beginPath();
+    g.moveTo(-w / 2, h / 2); g.lineTo(-w / 2, -h * 0.2); g.lineTo(-w * 0.25, h * 0.08); g.lineTo(0, -h / 2);
+    g.lineTo(w * 0.25, h * 0.08); g.lineTo(w / 2, -h * 0.2); g.lineTo(w / 2, h / 2); g.closePath();
+    g.stroke(); g.fill(); g.shadowBlur = 0;
+    for (const [px, py, c] of [[-w / 2, -h * 0.2, '#ff006e'], [0, -h / 2, '#3a86ff'], [w / 2, -h * 0.2, '#06d6a0']]) {
+      g.fillStyle = c; g.beginPath(); g.arc(px, py, w * 0.07, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = 'rgba(90,45,0,0.35)'; g.fillRect(-w / 2, h * 0.28, w, h * 0.12);
+    g.restore();
+  }
+  const OBJS = [golf, pog, eight, boule, snake];
 
   function frame(now) {
     if (!running) return;
@@ -102,17 +139,16 @@ export function playIntro(canvas, onDone) {
     }
     g.globalAlpha = 1;
 
-    // les 4 objets en spirale avec traînées
+    // les 5 objets en spirale avec traînées
     if (t < T_HIT + 0.05) {
-      const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
-      for (let i = 0; i < 4; i++) {
-        const start = 0.15 + i * 0.07;
+      for (let i = 0; i < OBJS.length; i++) {
+        const start = 0.15 + i * 0.06;
         for (let tr = 6; tr >= 0; tr--) {
           const tt = t - tr * 0.025;
           const k = Math.max(0, Math.min(1, (tt - start) / (T_HIT - start)));
           if (k <= 0) continue;
           const e = k * k * k;
-          const ang = Math.atan2(corners[i][1], corners[i][0]) + (1 - e) * 2.2;
+          const ang = -Math.PI / 2 + (i * Math.PI * 2) / OBJS.length + (1 - e) * 2.2;
           const dist = (1 - e) * S * 0.85;
           const x = cx + Math.cos(ang) * dist, y = cy + Math.sin(ang) * dist;
           const r = S * 0.07 * (0.6 + 0.4 * e);
@@ -143,58 +179,72 @@ export function playIntro(canvas, onDone) {
       g.globalAlpha = 1;
     }
 
-    // logo
+    // logo : couronne + « THE KING » + « GAME ARENA »
     if (t > T_LOGO) {
       g.font = '900 100px system-ui, -apple-system, sans-serif';
-      const ref = g.measureText(TITLE).width;
-      const fs = Math.min(92, (vw * 0.84 * 100) / ref);
-      g.font = `900 ${fs}px system-ui, -apple-system, sans-serif`; g.textBaseline = 'middle'; g.textAlign = 'center';
-      const widths = [...TITLE].map((c) => g.measureText(c).width);
-      const total = widths.reduce((a, b) => a + b, 0) + (TITLE.length - 1) * fs * 0.02;
-      let x = cx - total / 2;
+      const big = Math.min(96, (vw * 0.88 * 100) / g.measureText(LINES[1]).width);
+      const sizes = [big * 0.6, big];
+      const ys = [cy - big * 0.5, cy + big * 0.38];
       const ex = exitT >= 0 ? Math.min(1, exitT / 0.55) : 0;
-      const glow = g.createLinearGradient(0, cy - fs / 2, 0, cy + fs / 2);
-      glow.addColorStop(0, '#fff6c8'); glow.addColorStop(0.45, '#ffd34d'); glow.addColorStop(1, '#ff7b00');
-      for (let i = 0; i < TITLE.length; i++) {
-        const k = Math.max(0, Math.min(1, (t - T_LOGO - i * 0.07) / 0.45));
-        if (k <= 0) { x += widths[i] + fs * 0.02; continue; }
-        const el = 1 - Math.pow(2, -9 * k) * Math.cos(k * 10); // rebond élastique
-        const sc = (3 - 2 * el) * (1 + ex * 0.6);
-        const lx = x + widths[i] / 2, ly = cy - (1 - el) * 140 + Math.sin(t * 2.5 + i * 0.5) * 3 * (t > T_IDLE ? 1 : 0);
-        g.save(); g.translate(cx + (lx - cx) * (1 + ex * 0.6), ly); g.scale(sc, sc);
-        g.globalAlpha = Math.min(1, k * 2) * (1 - ex);
-        g.shadowColor = 'rgba(255,140,0,0.9)'; g.shadowBlur = 28;
-        g.lineWidth = fs * 0.09; g.strokeStyle = '#3b0d5c'; g.strokeText(TITLE[i], 0, 0);
-        g.shadowBlur = 0;
-        g.fillStyle = glow; g.fillText(TITLE[i], 0, 0);
-        g.restore();
-        x += widths[i] + fs * 0.02;
+      let idx = 0, totalW = 0;
+      for (let l = 0; l < 2; l++) {
+        const fs = sizes[l], text = LINES[l];
+        g.font = `900 ${fs}px system-ui, -apple-system, sans-serif`; g.textBaseline = 'middle'; g.textAlign = 'center';
+        const sp = fs * (l ? 0.03 : 0.16);
+        const widths = [...text].map((c) => g.measureText(c).width);
+        const total = widths.reduce((a, b) => a + b, 0) + (text.length - 1) * sp;
+        totalW = Math.max(totalW, total);
+        const glow = g.createLinearGradient(0, ys[l] - fs / 2, 0, ys[l] + fs / 2);
+        if (l) { glow.addColorStop(0, '#fff6c8'); glow.addColorStop(0.45, '#ffd34d'); glow.addColorStop(1, '#ff7b00'); }
+        else { glow.addColorStop(0, '#ffffff'); glow.addColorStop(1, '#d9c8ff'); }
+        let x = cx - total / 2;
+        for (let i = 0; i < text.length; i++, idx++) {
+          const k = Math.max(0, Math.min(1, (t - T_LOGO - idx * 0.05) / 0.45));
+          if (k <= 0 || text[i] === ' ') { x += widths[i] + sp; continue; }
+          const el = 1 - Math.pow(2, -9 * k) * Math.cos(k * 10); // rebond élastique
+          const sc = (3 - 2 * el) * (1 + ex * 0.6);
+          const lx = x + widths[i] / 2, ly = ys[l] - (1 - el) * 140 + Math.sin(t * 2.5 + idx * 0.5) * 3 * (t > T_IDLE ? 1 : 0);
+          g.save(); g.translate(cx + (lx - cx) * (1 + ex * 0.6), ly); g.scale(sc, sc);
+          g.globalAlpha = Math.min(1, k * 2) * (1 - ex);
+          g.shadowColor = l ? 'rgba(255,140,0,0.9)' : 'rgba(170,120,255,0.9)'; g.shadowBlur = 26;
+          g.lineWidth = fs * 0.1; g.strokeStyle = '#3b0d5c'; g.strokeText(text[i], 0, 0);
+          g.shadowBlur = 0;
+          g.fillStyle = glow; g.fillText(text[i], 0, 0);
+          g.restore();
+          x += widths[i] + sp;
+        }
+      }
+      // couronne qui tombe sur le titre
+      const kc = Math.max(0, Math.min(1, (t - T_LOGO - idx * 0.05 - 0.1) / 0.5));
+      if (kc > 0) {
+        const el = 1 - Math.pow(2, -9 * kc) * Math.cos(kc * 10);
+        crown(cx, ys[0] - sizes[0] * 1.35 - (1 - el) * 120 + Math.sin(t * 2) * 3, big * 0.95 * (1 + ex * 0.6), Math.min(1, kc * 2) * (1 - ex));
       }
       // reflet qui balaye le titre
-      const sweep = ((t - T_LOGO - 0.9) % 3.2) / 0.9;
+      const sweep = ((t - T_LOGO - 1.2) % 3.2) / 0.9;
       if (sweep > 0 && sweep < 1 && ex === 0) {
         g.save();
         g.globalCompositeOperation = 'lighter';
-        const sx = cx - total / 2 + sweep * (total + 120) - 60;
+        const sx = cx - totalW / 2 + sweep * (totalW + 120) - 60;
         const sg = g.createLinearGradient(sx - 40, 0, sx + 40, 0);
         sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,0.35)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = sg; g.fillRect(sx - 40, cy - fs * 0.6, 80, fs * 1.2);
+        g.fillStyle = sg; g.fillRect(sx - 40, ys[0] - sizes[0], 80, ys[1] - ys[0] + sizes[0] + big * 0.6);
         g.restore();
       }
       // sous-titre
-      const ks = Math.max(0, Math.min(1, (t - 2.3) / 0.5));
+      const ks = Math.max(0, Math.min(1, (t - 2.5) / 0.5));
       if (ks > 0) {
         g.globalAlpha = ks * (1 - ex);
-        g.font = `800 ${Math.max(13, fs * 0.22)}px system-ui`; g.fillStyle = '#e9dcff';
-        g.fillText('4 JEUX  ·  1 CHAMPION', cx, cy + fs * 0.85 + (1 - ks) * 20);
+        g.font = `800 ${Math.max(13, big * 0.2)}px system-ui`; g.fillStyle = '#e9dcff'; g.textAlign = 'center';
+        g.fillText('5 JEUX  ·  1 CHAMPION', cx, ys[1] + big * 0.9 + (1 - ks) * 20);
         g.globalAlpha = 1;
       }
-      // les 4 objets en orbite autour du logo
+      // les 5 objets en orbite autour du logo
       if (t > T_IDLE - 0.4) {
         const ko = Math.min(1, (t - T_IDLE + 0.4) / 0.6);
-        for (let i = 0; i < 4; i++) {
-          const a = t * 0.6 + (i * Math.PI) / 2;
-          const ox = cx + Math.cos(a) * total * 0.62, oy = cy + Math.sin(a) * fs * 1.35;
+        for (let i = 0; i < OBJS.length; i++) {
+          const a = t * 0.6 + (i * Math.PI * 2) / OBJS.length;
+          const ox = cx + Math.cos(a) * totalW * 0.62, oy = cy + Math.sin(a) * big * 1.75;
           g.globalAlpha = ko * (1 - ex) * (0.55 + 0.45 * Math.sin(a));
           OBJS[i](ox, oy, S * 0.035 * (0.8 + 0.25 * Math.sin(a)), t * 2);
         }

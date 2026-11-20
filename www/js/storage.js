@@ -77,6 +77,29 @@ export function recordGame(game, { mode, won, pogs }) {
   save();
 }
 
+// Serpent : niveaux (étoiles + meilleur temps) et record du mode infini
+export function recordSnake(level, stars, time) {
+  const p = current(); if (!p) return false;
+  p.stats = p.stats || {};
+  const s = p.stats.snake || (p.stats.snake = { played: 0, levels: {}, record: 0 });
+  s.played = (s.played || 0) + 1;
+  const old = s.levels[level];
+  const better = !old || time < old.best;
+  s.levels[level] = { stars: Math.max(stars, old?.stars || 0), best: better ? time : old.best };
+  save();
+  return better && !!old;
+}
+export function recordSnakeEndless(score) {
+  const p = current(); if (!p) return false;
+  p.stats = p.stats || {};
+  const s = p.stats.snake || (p.stats.snake = { played: 0, levels: {}, record: 0 });
+  s.played = (s.played || 0) + 1;
+  const rec = score > (s.record || 0);
+  if (rec) s.record = score;
+  save();
+  return rec;
+}
+
 // Enregistre un résultat ; ne garde que le meilleur. Renvoie true si c'est un nouveau record.
 export function recordResult(levelId, shots, stars) {
   const p = current();

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Gameqone</title>
+<title>The King Game Arena</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -20,8 +20,9 @@
 <!-- Profils -->
 <section class="screen" id="scr-profiles">
   <div class="brand">
-    <div class="brand-title">GAMEQONE</div>
-    <p class="tag">4 jeux · 1 champion</p>
+    <div class="crown">♛</div>
+    <div class="brand-title"><small>THE KING</small>GAME ARENA</div>
+    <p class="tag">5 jeux · 1 champion</p>
   </div>
   <h2 class="section-title">Qui joue ?</h2>
   <div class="profile-list" id="profileList"></div>
@@ -45,7 +46,7 @@
 <!-- Menu des jeux -->
 <section class="screen hub" id="scr-hub">
   <header class="hub-bar">
-    <div class="hub-logo">GAMEQONE</div>
+    <div class="hub-logo"><span>♛</span> King Game Arena</div>
     <button class="profile-chip" id="btnProfile"><span class="marble" id="hubMarble"></span><span id="hubName"></span></button>
     <button class="icon-btn" id="btnSettings" aria-label="Réglages">⚙</button>
   </header>
@@ -64,6 +65,13 @@
 <section class="screen" id="scr-levels">
   <header class="bar"><button class="icon-btn" data-back>‹</button><h2 id="levelsTitle"></h2><span></span></header>
   <div class="level-grid" id="levelGrid"></div>
+</section>
+
+<!-- Serpent : niveaux -->
+<section class="screen" id="scr-snake">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Serpent</h2><span></span></header>
+  <p class="muted small center">Mange les billes : elles s'ajoutent à ta queue. Ne touche ni le cadre, ni les murs, ni ton propre corps ! Glisse le doigt pour tourner.</p>
+  <div class="level-grid" id="snakeGrid"></div>
 </section>
 
 <!-- Choix du mode (billard, pétanque, pogs) -->

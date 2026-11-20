@@ -1,6 +1,6 @@
 {
-  "name": "Gameqone",
-  "short_name": "Gameqone",
+  "name": "The King Game Arena",
+  "short_name": "King Arena",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "portrait",

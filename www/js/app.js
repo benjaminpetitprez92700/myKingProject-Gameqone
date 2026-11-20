@@ -4,6 +4,7 @@ import { Game as MiniGolf } from './minigolf/game.js';
 import { Billard } from './billard/game.js';
 import { Petanque } from './petanque/game.js';
 import { Pog } from './pog/game.js';
+import { Snake, SNAKE_LEVELS } from './snake/game.js';
 import { playIntro } from './intro.js';
 import { fx, setPrefs, unlockAudio } from './fx.js';
 
@@ -13,6 +14,11 @@ const starsHtml = (n, total = 3) => Array.from({ length: total }, (_, i) => `<i 
 
 // ---------- Illustrations des cartes ----------
 const ART = {
+  snake: `<svg viewBox="0 0 240 120"><rect x="6" y="8" width="228" height="104" rx="14" fill="#2e6b3c" stroke="#b07a45" stroke-width="6"/>
+    <g class="slither">${['#ffbe0b','#3a86ff','#ff006e','#06d6a0','#8338ec','#fb5607'].map((c,i)=>`<circle cx="${150-i*22}" cy="${62+Math.sin(i*1.1)*16}" r="${11-i*0.6}" fill="${c}"/><circle cx="${147-i*22}" cy="${58+Math.sin(i*1.1)*16}" r="3" fill="rgba(255,255,255,.7)"/>`).join('')}
+    <circle cx="176" cy="58" r="15" fill="#2ec27e"/><circle cx="181" cy="52" r="5" fill="#fff"/><circle cx="181" cy="64" r="5" fill="#fff"/><circle cx="183" cy="52" r="2.4" fill="#111"/><circle cx="183" cy="64" r="2.4" fill="#111"/>
+    <path d="M191 58 l10 0 m0 0 l4 -4 m-4 4 l4 4" stroke="#ff3355" stroke-width="2.5" stroke-linecap="round" fill="none" class="tongue"/></g>
+    <circle cx="212" cy="58" r="9" fill="#ffcc33" class="bob"/><rect x="40" y="20" width="14" height="14" rx="3" fill="#8a929c"/><rect x="92" y="88" width="14" height="14" rx="3" fill="#8a929c"/></svg>`,
   minigolf: `<svg viewBox="0 0 120 120"><defs><radialGradient id="gb" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#c9d1da"/></radialGradient></defs>
     <path d="M10 100 Q 40 60 70 78 T 112 58" stroke="#e9cf98" stroke-width="22" fill="none" stroke-linecap="round"/>
     <ellipse cx="92" cy="64" rx="9" ry="6" fill="#111"/><line x1="92" y1="64" x2="92" y2="18" stroke="#fff" stroke-width="3"/>
@@ -37,8 +43,10 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'snake', name: 'Serpent', tag: 'Mange les billes, allonge ta queue, ne te mords pas !', cls: 'g-snake wide', badge: 'NOUVEAU' },
 ];
 const ARENA = {
+  snake: { cls: Snake, name: 'Serpent', desc: '' },
   pog: { cls: Pog, name: 'Pogs', desc: "Chacun met 5 pogs face cachée dans la pile. Vise, dose ta frappe dans la zone verte : tous les pogs qui retombent face visible sont à toi. Celui qui en gagne le plus remporte la partie." },
   billard: { cls: Billard, name: 'Billard américain', desc: "Règles du 8-ball : empoche toutes tes billes (pleines ou rayées) puis la noire. Glisse le doigt sur la table pour viser, tire la jauge vers le bas pour frapper." },
   petanque: { cls: Petanque, name: 'Pétanque', desc: 'Tête-à-tête, 3 boules chacun. Place la cible, choisis roulette, demi-portée, plombée ou tir, et arrête la jauge au centre. Le joueur le plus près du cochonnet marque.' },
@@ -94,6 +102,7 @@ const totalGolfStars = () => DIFFICULTIES.reduce((a, d) => a + LEVELS[d.id].leng
 function gameStat(id) {
   const p = prof(), s = p.stats?.[id];
   if (id === 'minigolf') return `★ ${store.totalStars(p)} / ${totalGolfStars()}`;
+  if (id === 'snake') { const st = Object.values(s?.levels || {}).reduce((a, r) => a + r.stars, 0); return `★ ${st} / ${SNAKE_LEVELS.length * 3} · record infini : ${s?.record || 0}`; }
   if (!s) return 'Pas encore joué';
   if (id === 'pog') return `${s.pogs || 0} pogs gagnés · ${s.wins || 0} victoire${s.wins > 1 ? 's' : ''}`;
   return `${s.wins || 0} victoire${s.wins > 1 ? 's' : ''} · ${s.played || 0} partie${s.played > 1 ? 's' : ''}`;
@@ -141,7 +150,7 @@ const render = {
     $('hubName').textContent = p.name;
     $('gameGrid').innerHTML = GAMES.map((gm, i) => `
       <button class="game-card ${gm.cls}" data-g="${gm.id}" style="animation-delay:${i * 90}ms">
-        <div class="art">${ART[gm.id]}</div>
+        ${gm.badge ? `<span class="badge">${gm.badge}</span>` : ''}<div class="art">${ART[gm.id]}</div>
         <div class="gc-text"><h3>${gm.name}</h3><p>${gm.tag}</p><span class="gc-stat">${gameStat(gm.id)}</span></div>
       </button>`).join('');
   },
@@ -170,6 +179,18 @@ const render = {
         <div class="best">${r ? `Record : ${r.best} coup${r.best > 1 ? 's' : ''}` : `Par ${lv.par}`}</div>
       </button>`;
     }).join('');
+  },
+  'scr-snake'() {
+    const s = prof().stats?.snake || { levels: {}, record: 0 };
+    const firstOpen = SNAKE_LEVELS.findIndex((_, i) => !s.levels[i]);
+    $('snakeGrid').innerHTML = SNAKE_LEVELS.map((lv, i) => {
+      const r = s.levels[i], locked = i > 0 && !s.levels[i - 1];
+      return `<button class="lvl ${locked ? 'locked' : ''} ${i === firstOpen ? 'next' : ''}" data-i="${i}">
+        <div class="num">${locked ? '🔒' : i + 1}</div><div class="nm">${lv.name}</div>
+        <div class="stars">${starsHtml(r?.stars || 0)}</div>
+        <div class="best">${r ? `Record : ${r.best.toFixed(1)} s` : `${lv.goal} billes · vitesse ${lv.speed}`}</div></button>`;
+    }).join('') + `<button class="lvl endless" data-i="endless"><div class="num">∞</div><div class="nm">Mode infini</div>
+        <div class="best">La vitesse augmente à chaque bille · record : ${s.record || 0}</div></button>`;
   },
   'scr-mode'() {
     const a = ARENA[curArena];
@@ -225,6 +246,7 @@ $('gameGrid').onclick = (e) => {
   fx.tap();
   const id = c.dataset.g;
   if (id === 'minigolf') show('scr-diff');
+  else if (id === 'snake') show('scr-snake');
   else { curArena = id; show('scr-mode'); }
 };
 
@@ -251,6 +273,14 @@ $('levelGrid').onclick = (e) => {
   const lv = LEVELS[curDiff.id][+b.dataset.i];
   if (!levelUnlocked(lv)) { fx.lose(); return; }
   fx.tap(); startLevel(lv);
+};
+
+// Serpent
+$('snakeGrid').onclick = (e) => {
+  const b = e.target.closest('.lvl'); if (!b) return;
+  if (b.classList.contains('locked')) { fx.lose(); return; }
+  fx.tap(); curArena = 'snake';
+  startArena({ mode: 'solo', level: b.dataset.i === 'endless' ? 'endless' : +b.dataset.i });
 };
 
 // Mode (billard / pétanque / pogs)
@@ -304,12 +334,13 @@ function startArena(opts) {
   arenaOpts = {
     ...opts, game: curArena, target: ptsTarget,
     names: [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
-    colors: [p.color, '#ff006e'],
+    colors: [p.color, '#ff006e'], color: p.color,
   };
   active = 'arena';
   if (stack[stack.length - 1] !== 'scr-arena') show('scr-arena');
   closeModal('mdResult'); closeModal('mdPause');
   $('arenaTitle').textContent = ARENA[curArena].name;
+  $('scr-arena').classList.toggle('snake-mode', curArena === 'snake');
   hud.controls(null);
   arena?.stop();
   arena = new ARENA[curArena].cls($('arena'), hud);
@@ -371,7 +402,25 @@ function showGolfResult({ won, shots, stars }) {
   openModal('mdResult');
 }
 
+function showSnakeResult(r) {
+  const lv = arenaOpts.level;
+  let extra = '';
+  if (r.endless) { if (store.recordSnakeEndless(r.score)) extra = ' Nouveau record !'; }
+  else if (r.won && store.recordSnake(lv, r.stars, r.time)) extra = ' Nouveau record de temps !';
+  $('resTitle').textContent = r.title;
+  $('resText').textContent = r.text + extra;
+  if (r.endless) $('resStars').style.display = 'none'; else popStars(r.won ? r.stars : 0);
+  const next = !r.endless && r.won && lv + 1 < SNAKE_LEVELS.length ? lv + 1 : null;
+  $('btnNext').style.display = next != null ? '' : 'none';
+  $('btnNext').textContent = 'Niveau suivant';
+  $('btnNext').onclick = () => { fx.tap(); startArena({ mode: 'solo', level: next }); };
+  $('btnRetry').textContent = r.won ? 'Rejouer' : 'Réessayer';
+  $('btnLevels').textContent = 'Liste des niveaux';
+  openModal('mdResult');
+}
+
 function showArenaResult(r) {
+  if (arenaOpts.game === 'snake') return showSnakeResult(r);
   store.recordGame(arenaOpts.game, { mode: arenaOpts.mode, won: r.won, pogs: r.pogs });
   $('resTitle').textContent = r.title;
   $('resText').textContent = r.text;

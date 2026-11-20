@@ -37,21 +37,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../Gameqone.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../KingGameArena.apk
 
       - name: Garder l'APK comme artefact
         uses: actions/upload-artifact@v4
         with:
-          name: Gameqone.apk
-          path: Gameqone.apk
+          name: KingGameArena.apk
+          path: KingGameArena.apk
 
       - name: Publier l'APK dans une Release (téléchargeable depuis le téléphone)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Gameqone – version ${{ github.run_number }}
+          name: King Game Arena – version ${{ github.run_number }}
           prerelease: true
-          files: Gameqone.apk
+          files: KingGameArena.apk
           body: |
-            Télécharge **Gameqone.apk** sur ton téléphone Android et ouvre-le pour l'installer
+            Télécharge **KingGameArena.apk** sur ton téléphone Android et ouvre-le pour l'installer
             (autorise « installer des applis inconnues » si Android le demande).

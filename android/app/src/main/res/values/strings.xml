@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Gameqone</string>
-    <string name="title_activity_main">Gameqone</string>
+    <string name="app_name">King Game Arena</string>
+    <string name="title_activity_main">King Game Arena</string>
     <string name="package_name">com.calot.billes</string>
     <string name="custom_url_scheme">com.calot.billes</string>
 </resources>

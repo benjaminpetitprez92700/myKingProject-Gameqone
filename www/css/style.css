@@ -312,3 +312,29 @@ h1, h2 { margin: 0; }
   background: rgba(10, 6, 24, .7); color: #fff; backdrop-filter: blur(6px);
 }
 .throw-types button.sel { background: var(--accent); color: var(--accent-ink); }
+
+/* ---------- The King Game Arena ---------- */
+.crown { font-size: 2.6rem; line-height: 1; color: #ffc928; text-shadow: 0 0 18px rgba(255, 190, 40, .7); animation: bob 2s ease-in-out infinite; }
+.brand-title { line-height: 1; }
+.brand-title small { display: block; font-size: .5em; letter-spacing: 6px; margin-bottom: 4px; }
+.hub-logo { font-size: 1.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub-logo span { -webkit-text-fill-color: #ffc928; }
+.game-card.wide { grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; }
+.game-card.wide .art { flex: 0 0 52%; padding: 10px; }
+.game-card.wide .art svg { max-width: 230px; }
+.game-card.wide .gc-text { background: none; flex: 1; }
+.g-snake { background: linear-gradient(150deg, #3ddc84, #0e6b4a 60%, #0a3d2c); }
+.badge {
+  position: absolute; top: 10px; left: 10px; z-index: 1; background: #ff006e; color: #fff; font-size: .68rem; font-weight: 900;
+  padding: 3px 8px; border-radius: 99px; letter-spacing: 1px; animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 50% { transform: scale(1.12); } }
+.slither { animation: slither 1.6s ease-in-out infinite; }
+@keyframes slither { 50% { transform: translateX(6px); } }
+.tongue { animation: tongue .9s steps(2) infinite; }
+@keyframes tongue { 50% { opacity: 0; } }
+.lvl.endless { grid-column: 1 / -1; min-height: 110px; background: linear-gradient(135deg, #3ddc84, #0e6b4a); }
+.lvl.endless .nm, .lvl.endless .best { color: #eafff3; }
+.score-bar .sp.narrow { flex: 0 0 92px; }
+.score-bar .prog { flex: 1; min-width: 50px; height: 7px; border-radius: 99px; background: rgba(255,255,255,.15); overflow: hidden; margin-left: 6px; }
+.score-bar .prog i { display: block; height: 100%; background: linear-gradient(90deg, #3ddc84, #ffd34d); border-radius: 99px; transition: width .25s; }
