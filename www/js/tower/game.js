@@ -479,52 +479,100 @@ export class TowerDefense {
 
   _drawEnemy(g, e, cs) {
     const E = ENEMIES[e.type], x = this.ox + e.x * cs, bob = Math.sin(this.t * 10 + e.wob) * cs * 0.03;
-    const y = this.oy + e.y * cs + bob, r = E.size * cs;
-    g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(x, this.oy + e.y * cs + r * 0.8 + (E.fly ? cs * 0.25 : 0), r * 0.9, r * 0.35, 0, 0, Math.PI * 2); g.fill();
-    const yy = E.fly ? y - cs * 0.25 : y;
+    const r = E.size * cs, yy = this.oy + e.y * cs + (E.fly ? -cs * 0.25 + bob : 0);
+    const dir = e.dir ?? Math.PI / 2, hit = e.hitT > 0, T = this.t + e.wob;
+    const ink = 'rgba(20,12,6,0.55)';
+    const blob = (cx, cy, rx, ry, fill, line = true) => { g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = hit ? '#fff' : fill; g.fill(); if (line) { g.strokeStyle = ink; g.lineWidth = 1; g.stroke(); } };
+    const lit = (cx, cy, rr, c1, c2) => { const gr = g.createRadialGradient(cx - rr * 0.35, cy - rr * 0.35, 1, cx, cy, rr); gr.addColorStop(0, c1); gr.addColorStop(1, c2); return gr; };
+    // ombre portée (lumière en haut à gauche)
+    const long = e.type === 'chevalier' || e.type === 'boss';
+    g.save(); g.translate(x + cs * 0.06, this.oy + e.y * cs + cs * 0.08 + (E.fly ? cs * 0.1 : 0)); g.rotate(dir);
+    g.fillStyle = E.fly ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.32)'; g.beginPath(); g.ellipse(long ? -r * 0.4 : 0, 0, r * (long ? 2.1 : 0.95), r * (long ? 1.05 : 0.85), 0, 0, Math.PI * 2); g.fill();
+    g.restore();
+    g.save(); g.translate(x, yy); g.rotate(dir);
+    const walk = Math.sin(T * 12);
     if (e.type === 'chauvesouris') {
-      const flap = Math.sin(this.t * 18 + e.wob) * 0.6;
-      g.fillStyle = E.color;
-      for (const s of [-1, 1]) { g.beginPath(); g.moveTo(x, yy); g.quadraticCurveTo(x + s * r * 1.4, yy - r * (0.8 + flap), x + s * r * 1.9, yy + r * 0.2); g.quadraticCurveTo(x + s * r, yy + r * 0.1, x, yy + r * 0.3); g.fill(); }
-      g.beginPath(); g.arc(x, yy, r * 0.5, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#ff4d4d'; g.fillRect(x - r * 0.22, yy - r * 0.15, r * 0.12, r * 0.12); g.fillRect(x + r * 0.1, yy - r * 0.15, r * 0.12, r * 0.12);
-    } else {
-      // petit soldat vu de dessus, orienté dans le sens de la marche
-      const dir = e.dir ?? Math.PI / 2, walk = Math.sin(this.t * 12 + e.wob), hit = e.hitT > 0;
-      const tunic = hit ? '#ffffff' : E.color, metal = e.type === 'chevalier' || e.type === 'boss';
-      g.save(); g.translate(x, yy); g.rotate(dir);
-      if (e.type === 'boss') { g.fillStyle = '#7a1018'; g.beginPath(); g.moveTo(-r * 0.2, -r * 0.9); g.quadraticCurveTo(-r * 1.5, 0, -r * 0.2, r * 0.9); g.closePath(); g.fill(); }
-      // jambes
-      g.fillStyle = '#3a2a1a';
-      for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(walk * sd * r * 0.35, sd * r * 0.32, r * 0.28, r * 0.17, 0, 0, Math.PI * 2); g.fill(); }
-      // bras
-      g.fillStyle = metal ? '#aeb6bf' : '#e0b48a';
-      for (const sd of [-1, 1]) { g.beginPath(); g.arc(-walk * sd * r * 0.25 + r * 0.05, sd * r * 0.88, r * 0.2, 0, Math.PI * 2); g.fill(); }
-      // épaules / torse
-      const tg = g.createLinearGradient(-r, -r, r, r); tg.addColorStop(0, shade(E.color, 0.2)); tg.addColorStop(1, shade(E.color, -0.3));
-      g.fillStyle = hit ? '#fff' : tg; g.beginPath(); g.ellipse(0, 0, r * 0.5, r * 0.82, 0, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = 1.2; g.stroke();
-      if (metal) { g.strokeStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.ellipse(0, 0, r * 0.35, r * 0.65, 0, -2.4, -0.8); g.stroke(); }
-      // armes
-      if (e.type === 'soldat') { g.strokeStyle = '#7a5230'; g.lineWidth = r * 0.12; g.beginPath(); g.moveTo(-r * 0.6, r * 0.88); g.lineTo(r * 1.5, r * 0.88); g.stroke(); g.fillStyle = '#cfd6dd'; g.beginPath(); g.moveTo(r * 1.5, r * 0.75); g.lineTo(r * 1.85, r * 0.88); g.lineTo(r * 1.5, r * 1.01); g.fill(); }
-      else if (e.type === 'coureur') { g.fillStyle = '#cfd6dd'; g.fillRect(r * 0.2, r * 0.82, r * 0.7, r * 0.12); }
-      else {
-        g.fillStyle = '#cfd6dd'; g.fillRect(r * 0.2, r * 0.82, r * (e.type === 'boss' ? 1.3 : 1), r * 0.14);
-        const sg = g.createLinearGradient(0, -r * 1.3, 0, -r * 0.6); sg.addColorStop(0, '#e8edf2'); sg.addColorStop(1, '#7d8792');
-        g.fillStyle = sg; g.beginPath(); g.ellipse(r * 0.25, -r * 0.95, r * 0.22, r * 0.5, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#3d454f'; g.lineWidth = 1; g.stroke();
-        g.fillStyle = e.type === 'boss' ? '#ffd34d' : '#c0392b'; g.beginPath(); g.arc(r * 0.25, -r * 0.95, r * 0.1, 0, Math.PI * 2); g.fill();
+      // corbeau
+      const flap = Math.sin(T * 16);
+      g.fillStyle = hit ? '#fff' : '#1b1b22';
+      for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(r * 0.2, 0); g.quadraticCurveTo(-r * 0.1, sd * r * (1.2 + flap * 0.5), -r * 0.7, sd * r * (1.6 + flap * 0.6)); g.lineTo(-r * 0.5, sd * r * 0.3); g.closePath(); g.fill(); }
+      blob(0, 0, r * 0.62, r * 0.32, '#23232b', false);
+      g.fillStyle = '#23232b'; g.beginPath(); g.moveTo(-r * 0.5, 0); g.lineTo(-r * 1.0, -r * 0.25); g.lineTo(-r * 1.0, r * 0.25); g.fill();
+      blob(r * 0.62, 0, r * 0.24, r * 0.22, '#2b2b35', false);
+      g.fillStyle = '#e0a526'; g.beginPath(); g.moveTo(r * 0.8, -r * 0.08); g.lineTo(r * 1.12, 0); g.lineTo(r * 0.8, r * 0.08); g.fill();
+      g.fillStyle = '#fff'; g.fillRect(r * 0.66, -r * 0.14, r * 0.06, r * 0.06); g.fillRect(r * 0.66, r * 0.08, r * 0.06, r * 0.06);
+    } else if (e.type === 'chevalier' || e.type === 'boss') {
+      const boss = e.type === 'boss', wheelR = r * (boss ? 0.5 : 0.42), spin = T * 6;
+      // attelage : bœuf (charrette) ou deux chevaux (char de guerre)
+      const beasts = boss ? [-0.45, 0.45] : [0];
+      for (const off of beasts) {
+        const bx = r * 1.25, by = off * r * 1.1, step = Math.sin(T * (boss ? 14 : 7) + off * 3);
+        g.fillStyle = '#2a1a0e';
+        for (const [lx, ly] of [[0.45, -0.22], [0.45, 0.22], [-0.35, -0.22], [-0.35, 0.22]]) { g.beginPath(); g.ellipse(bx + (lx + (ly > 0 ? step : -step) * 0.12) * r, by + ly * r, r * 0.14, r * 0.1, 0, 0, Math.PI * 2); g.fill(); }
+        const col = boss ? (off < 0 ? '#e9e4d8' : '#7a5a3a') : '#8a5a32';
+        g.fillStyle = hit ? '#fff' : lit(bx, by, r * 0.7, boss ? '#fff8ea' : '#b07a48', col); g.beginPath(); g.ellipse(bx, by, r * 0.62, r * (boss ? 0.26 : 0.36), 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = ink; g.lineWidth = 1; g.stroke();
+        blob(bx + r * 0.72, by, r * 0.24, r * (boss ? 0.14 : 0.2), col);
+        if (!boss) { g.strokeStyle = '#efe6cf'; g.lineWidth = r * 0.08; g.beginPath(); g.moveTo(bx + r * 0.7, by - r * 0.12); g.quadraticCurveTo(bx + r * 0.75, by - r * 0.45, bx + r * 0.95, by - r * 0.42); g.moveTo(bx + r * 0.7, by + r * 0.12); g.quadraticCurveTo(bx + r * 0.75, by + r * 0.45, bx + r * 0.95, by + r * 0.42); g.stroke(); }
+        else { g.strokeStyle = '#3a2a1a'; g.lineWidth = r * 0.08; g.beginPath(); g.moveTo(bx - r * 0.1, by); g.lineTo(bx + r * 0.55, by); g.stroke(); }
       }
-      // tête : casque, capuche ou bonnet
-      const hg = g.createRadialGradient(r * 0.05, -r * 0.15, 1, r * 0.1, 0, r * 0.45);
-      if (metal) { hg.addColorStop(0, '#f2f5f8'); hg.addColorStop(1, '#5f6973'); }
-      else if (e.type === 'coureur') { hg.addColorStop(0, '#3f8f3a'); hg.addColorStop(1, '#1f4a1a'); }
-      else { hg.addColorStop(0, '#9a6a3a'); hg.addColorStop(1, '#4a2f16'); }
-      g.fillStyle = hit ? '#fff' : hg; g.beginPath(); g.arc(r * 0.1, 0, r * 0.42, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1; g.stroke();
-      if (metal) { g.fillStyle = '#20252b'; g.fillRect(r * 0.38, -r * 0.2, r * 0.1, r * 0.4); }
-      if (e.type === 'boss') { g.fillStyle = '#ffd34d'; for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; g.beginPath(); g.arc(r * 0.1 + Math.cos(a) * r * 0.36, Math.sin(a) * r * 0.36, r * 0.09, 0, Math.PI * 2); g.fill(); } }
+      // timon et caisse
+      g.strokeStyle = '#5a3a1e'; g.lineWidth = r * 0.12; g.beginPath(); g.moveTo(r * 0.3, 0); g.lineTo(r * 0.75, 0); g.stroke();
+      for (const sd of [-1, 1]) {
+        g.save(); g.translate(-r * 0.25, sd * r * (boss ? 0.78 : 0.7));
+        g.fillStyle = '#3a2614'; g.fillRect(-wheelR, -r * 0.1, wheelR * 2, r * 0.2);
+        g.strokeStyle = '#c9a46a'; g.lineWidth = 1; for (let k = 0; k < 4; k++) { const ax = Math.cos(spin + k * Math.PI / 2) * wheelR; g.beginPath(); g.moveTo(ax, -r * 0.1); g.lineTo(ax, r * 0.1); g.stroke(); }
+        if (boss) { g.fillStyle = '#b8bec6'; g.beginPath(); g.moveTo(-r * 0.1, sd * r * 0.1); g.lineTo(0, sd * r * 0.45); g.lineTo(r * 0.1, sd * r * 0.1); g.fill(); }
+        g.restore();
+      }
+      const cw = r * (boss ? 1.1 : 1.3), ch = r * (boss ? 1.2 : 1.15);
+      g.fillStyle = hit ? '#fff' : '#8a5a2e'; g.beginPath(); g.roundRect(-r * 0.25 - cw / 2, -ch / 2, cw, ch, r * 0.12); g.fill(); g.strokeStyle = ink; g.stroke();
+      g.strokeStyle = 'rgba(40,20,5,0.5)'; g.lineWidth = 1; for (let k = 1; k < 4; k++) { const lx = -r * 0.25 - cw / 2 + (cw * k) / 4; g.beginPath(); g.moveTo(lx, -ch / 2); g.lineTo(lx, ch / 2); g.stroke(); }
+      if (!boss) {
+        // chargement : foin et tonneaux
+        blob(-r * 0.55, 0, r * 0.32, r * 0.42, '#e4c766'); g.strokeStyle = 'rgba(150,110,20,0.6)'; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(-r * 0.8, -r * 0.3 + k * r * 0.15); g.lineTo(-r * 0.3, -r * 0.28 + k * r * 0.15); g.stroke(); }
+        for (const by of [-0.28, 0.28]) { g.fillStyle = hit ? '#fff' : lit(r * 0.05, by * r, r * 0.24, '#b07a48', '#5a3a1e'); g.beginPath(); g.arc(r * 0.05, by * r, r * 0.22, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#2a2a2a'; g.lineWidth = 1.2; g.beginPath(); g.arc(r * 0.05, by * r, r * 0.15, 0, Math.PI * 2); g.stroke(); }
+        blob(r * 0.25, -r * 0.75, r * 0.16, r * 0.16, '#e9b98a'); // conducteur
+      } else {
+        // le chef : cape rouge, casque ailé, grosse moustache
+        g.fillStyle = hit ? '#fff' : '#a3121c'; g.beginPath(); g.moveTo(-r * 0.2, -r * 0.45); g.quadraticCurveTo(-r * 1.2, -r * 0.2 + Math.sin(T * 8) * r * 0.1, -r * 1.1, 0); g.quadraticCurveTo(-r * 1.2, r * 0.2, -r * 0.2, r * 0.45); g.fill();
+        blob(-r * 0.15, 0, r * 0.32, r * 0.48, '#6b4a2a');
+        g.fillStyle = hit ? '#fff' : lit(-r * 0.1, 0, r * 0.3, '#f2f5f8', '#7d8792'); g.beginPath(); g.arc(-r * 0.1, 0, r * 0.26, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#fff'; for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(-r * 0.15, sd * r * 0.2); g.quadraticCurveTo(-r * 0.25, sd * r * 0.6, -r * 0.55, sd * r * 0.62); g.lineTo(-r * 0.3, sd * r * 0.22); g.fill(); }
+        g.fillStyle = '#e8c24a'; g.beginPath(); g.ellipse(r * 0.18, 0, r * 0.07, r * 0.3, 0, 0, Math.PI * 2); g.fill();
+      }
+    } else {
+      // guerrier gaulois (soldat) ou éclaireur (coureur), vu du dessus
+      const scout = e.type === 'coureur';
+      g.fillStyle = '#4a2e18';
+      for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(walk * sd * r * 0.38, sd * r * 0.3, r * 0.26, r * 0.15, 0, 0, Math.PI * 2); g.fill(); }
+      if (scout) { g.fillStyle = hit ? '#fff' : '#2f6b2c'; g.beginPath(); g.moveTo(r * 0.1, -r * 0.8); g.quadraticCurveTo(-r * 1.1, -r * 0.3 + walk * r * 0.1, -r * 1.0, 0); g.quadraticCurveTo(-r * 1.1, r * 0.3, r * 0.1, r * 0.8); g.fill(); }
+      // bras
+      g.fillStyle = '#e9b98a';
+      for (const sd of [-1, 1]) { g.beginPath(); g.arc(-walk * sd * r * 0.22 + r * 0.05, sd * r * 0.86, r * 0.18, 0, Math.PI * 2); g.fill(); }
+      // torse : tunique à carreaux
+      g.save(); g.beginPath(); g.ellipse(0, 0, r * 0.48, r * 0.8, 0, 0, Math.PI * 2); g.clip();
+      g.fillStyle = hit ? '#fff' : scout ? '#6b7f3a' : '#2f5fb0'; g.fillRect(-r, -r, r * 2, r * 2);
+      if (!hit && !scout) { g.fillStyle = 'rgba(255,255,255,0.35)'; for (let k = -3; k <= 3; k++) { g.fillRect(-r, k * r * 0.28, r * 2, r * 0.09); g.fillRect(k * r * 0.28, -r, r * 0.09, r * 2); } }
+      g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(r * 0.2, r * 0.2, r * 0.6, r * 0.9, 0, 0, Math.PI * 2); g.fill();
       g.restore();
+      g.strokeStyle = ink; g.lineWidth = 1; g.beginPath(); g.ellipse(0, 0, r * 0.48, r * 0.8, 0, 0, Math.PI * 2); g.stroke();
+      if (scout) { g.strokeStyle = '#7a5230'; g.lineWidth = r * 0.1; g.beginPath(); g.moveTo(-r * 0.7, r * 0.86); g.lineTo(r * 1.5, r * 0.86); g.stroke(); g.fillStyle = '#cfd6dd'; g.beginPath(); g.moveTo(r * 1.5, r * 0.74); g.lineTo(r * 1.85, r * 0.86); g.lineTo(r * 1.5, r * 0.98); g.fill(); }
+      else {
+        // épée et bouclier rond en bois cerclé
+        g.fillStyle = '#d5dbe1'; g.fillRect(r * 0.15, r * 0.8, r * 0.95, r * 0.12); g.fillStyle = '#7a5230'; g.fillRect(r * 0.05, r * 0.72, r * 0.1, r * 0.28);
+        g.fillStyle = hit ? '#fff' : lit(r * 0.2, -r * 0.95, r * 0.45, '#c08a52', '#6a4220'); g.beginPath(); g.arc(r * 0.2, -r * 0.95, r * 0.42, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = '#4a4f55'; g.lineWidth = r * 0.07; g.stroke(); g.fillStyle = '#c9ccd0'; g.beginPath(); g.arc(r * 0.2, -r * 0.95, r * 0.12, 0, Math.PI * 2); g.fill();
+      }
+      // tête : tresses blondes, casque ailé (guerrier) ou capuche (éclaireur)
+      if (!scout) { g.strokeStyle = '#e8c24a'; g.lineWidth = r * 0.12; for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(-r * 0.05, sd * r * 0.25); g.quadraticCurveTo(-r * 0.4, sd * r * 0.35, -r * 0.55, sd * r * 0.3 + walk * r * 0.05); g.stroke(); } }
+      g.fillStyle = hit ? '#fff' : scout ? lit(r * 0.1, 0, r * 0.4, '#4f8f3a', '#1f4a1a') : lit(r * 0.1, 0, r * 0.4, '#f2f5f8', '#6d7782'); g.beginPath(); g.arc(r * 0.08, 0, r * 0.36, 0, Math.PI * 2); g.fill(); g.strokeStyle = ink; g.lineWidth = 1; g.stroke();
+      if (!scout) {
+        g.fillStyle = '#fff';
+        for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(r * 0.1, sd * r * 0.28); g.quadraticCurveTo(r * 0.05, sd * r * 0.75, -r * 0.35, sd * r * 0.72); g.lineTo(-r * 0.05, sd * r * 0.3); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.3)'; g.stroke(); }
+        g.fillStyle = '#e8c24a'; g.beginPath(); g.ellipse(r * 0.42, 0, r * 0.06, r * 0.26, 0, 0, Math.PI * 2); g.fill();
+      }
     }
+    g.restore();
     if (e.slow > 0) { g.strokeStyle = 'rgba(160,220,255,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(x, yy, r + 2, 0, Math.PI * 2); g.stroke(); }
     // barre de vie
     const w = Math.max(r * 2, cs * 0.5), pct = Math.max(0, e.hp / e.max);
