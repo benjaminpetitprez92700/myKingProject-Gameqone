@@ -100,6 +100,17 @@ export function recordSnakeEndless(score) {
   return rec;
 }
 
+// Calcul mental et dictée : meilleures étoiles par niveau
+export function recordLearn(kind, key, stars) {
+  const p = current(); if (!p) return false;
+  p.stats = p.stats || {};
+  const s = p.stats[kind] || (p.stats[kind] = {});
+  const better = stars > (s[key] || 0);
+  if (better) s[key] = stars;
+  save();
+  return better;
+}
+
 // Tarot : partie en cours (une par profil)
 export function saveTarot(game) { const p = current(); if (!p) return; p.tarot = game; save(); }
 export const getTarot = () => current()?.tarot || null;

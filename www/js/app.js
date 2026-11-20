@@ -8,6 +8,8 @@ import { Pog } from './pog/game.js';
 import { Snake, SNAKE_LEVELS } from './snake/game.js';
 import { Chess } from './chess/game.js';
 import { mountTarot } from './tarot/ui.js';
+import { Stratego } from './stratego/game.js';
+import { OPS, MATH_LEVELS, DICTEE_LEVELS, runQuiz, speak } from './learn/quiz.js';
 import { playIntro } from './intro.js';
 import { showTutorial } from './tutorial.js';
 import { playSong, setMusicOn, isMusicOn } from './music.js';
@@ -19,6 +21,14 @@ const starsHtml = (n, total = 3) => Array.from({ length: total }, (_, i) => `<i 
 
 // ---------- Illustrations des cartes ----------
 const ART = {
+  stratego: `<svg viewBox="0 0 120 120"><rect x="8" y="14" width="104" height="92" rx="8" fill="#5f7a3a"/><rect x="40" y="52" width="16" height="16" rx="3" fill="#3fa2d6"/><rect x="66" y="52" width="16" height="16" rx="3" fill="#3fa2d6"/>
+    ${[0,1,2,3].map(i=>`<rect x="${16+i*24}" y="22" width="18" height="20" rx="4" fill="#1f4e9e"/>`).join('')}
+    <g class="bob"><rect x="20" y="76" width="22" height="24" rx="4" fill="#b3261e"/><rect x="23" y="79" width="16" height="18" rx="2" fill="#f4ecd8"/><text x="31" y="93" text-anchor="middle" font-size="11" font-weight="900" fill="#6e130d">10</text></g>
+    <rect x="50" y="76" width="22" height="24" rx="4" fill="#b3261e"/><rect x="53" y="79" width="16" height="18" rx="2" fill="#f4ecd8"/><circle cx="61" cy="89" r="5" fill="#6e130d"/><rect x="80" y="76" width="22" height="24" rx="4" fill="#b3261e"/><rect x="83" y="79" width="16" height="18" rx="2" fill="#f4ecd8"/><path d="M87 82 L87 95 M87 82 L96 85 L87 89" stroke="#6e130d" stroke-width="2" fill="#6e130d"/></svg>`,
+  math: `<svg viewBox="0 0 120 120"><rect x="18" y="14" width="84" height="94" rx="12" fill="#1a1233" stroke="#fff" stroke-opacity=".3"/><rect x="26" y="22" width="68" height="24" rx="6" fill="#06d6a0"/><text x="60" y="40" text-anchor="middle" font-size="16" font-weight="900" fill="#073b2c">7×8=56</text>
+    ${[0,1,2].map(r=>[0,1,2].map(c=>`<rect x="${28+c*22}" y="${54+r*16}" width="18" height="12" rx="3" fill="${r===2&&c===2?'#ffd34d':'rgba(255,255,255,.25)'}"/>`).join('')).join('')}<text class="bob" x="100" y="20" font-size="22" fill="#ffd34d" font-weight="900">+</text></svg>`,
+  dictee: `<svg viewBox="0 0 120 120"><rect x="16" y="40" width="88" height="62" rx="8" fill="#fff"/>${[0,1,2,3].map(i=>`<line x1="24" y1="${56+i*12}" x2="96" y2="${56+i*12}" stroke="#9ec5ff"/>`).join('')}<text x="28" y="66" font-size="15" font-family="cursive" fill="#1d3557">château</text>
+    <g class="bob"><circle cx="40" cy="24" r="14" fill="#8338ec"/><path d="M34 19 L38 19 L44 14 L44 34 L38 29 L34 29 Z" fill="#fff"/><path d="M48 18 Q53 24 48 30" stroke="#fff" stroke-width="2.5" fill="none"/></g><path d="M86 96 L104 60 L110 64 L92 100 Z" fill="#ffbe0b" stroke="#5a3a00" stroke-width="2"/></svg>`,
   chess: `<svg viewBox="0 0 120 120"><defs><linearGradient id="cw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d8cdb8"/></linearGradient></defs>
     ${[0,1,2,3].map(r=>[0,1,2,3].map(c=>`<rect x="${12+c*24}" y="${50+r*15}" width="24" height="15" fill="${(r+c)%2?'#a8703f':'#ecd3a5'}"/>`).join('')).join('')}
     <g class="bob"><path d="M46 92 L74 92 L70 84 L68 60 Q76 54 70 44 L66 44 L66 36 L72 36 L72 30 L66 30 L66 24 L54 24 L54 30 L48 30 L48 36 L54 36 L54 44 L50 44 Q44 54 52 60 L50 84 Z" fill="url(#cw)" stroke="#2b1a0c" stroke-width="2.5" stroke-linejoin="round"/></g>
@@ -55,11 +65,15 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'stratego', name: 'Guerre Éclair', tag: 'Stratégie : trouve le drapeau ennemi', cls: 'g-stratego', badge: 'NOUVEAU' },
+  { id: 'math', name: 'Calcul mental', tag: 'Additions, soustractions, tables', cls: 'g-math', badge: 'NOUVEAU' },
+  { id: 'dictee', name: 'Dictée', tag: 'Écoute le mot et écris-le', cls: 'g-dictee', badge: 'NOUVEAU' },
   { id: 'chess', name: 'Échecs', tag: "Contre l'ordi ou à deux", cls: 'g-chess', badge: 'NOUVEAU' },
   { id: 'tarot', name: 'Tarot à 5', tag: 'Compteur de points et podium', cls: 'g-tarot', badge: 'NOUVEAU' },
   { id: 'snake', name: 'Serpent', tag: 'Mange les billes, allonge ta queue, ne te mords pas !', cls: 'g-snake wide', badge: 'NOUVEAU' },
 ];
 const ARENA = {
+  stratego: { cls: Stratego, name: 'Guerre Éclair', desc: "Règles du Stratego : 40 pièces cachées par camp. Déplace-toi d'une case, attaque pour révéler les pièces : la plus forte gagne. Capture le drapeau ennemi pour gagner. Attention aux bombes !" },
   chess: { cls: Chess, name: 'Échecs', desc: "Toutes les règles officielles : roque, prise en passant, promotion, échec et mat, pat. Touche une pièce pour voir ses coups possibles, puis touche la case d'arrivée." },
   snake: { cls: Snake, name: 'Serpent', desc: '' },
   pog: { cls: Pog, name: 'Pogs', desc: "Chacun met 5 pogs face cachée dans la pile. Vise, dose ta frappe dans la zone verte : tous les pogs qui retombent face visible sont à toi. Celui qui en gagne le plus remporte la partie." },
@@ -75,6 +89,7 @@ function songFor(id) {
   if (id === 'scr-game') return 'golf';
   if (id === 'scr-arena') return curArena === 'chess' ? 'chess' : curArena;
   if (id === 'scr-tarot') return 'billard';
+  if (id === 'scr-quiz') return quizKind === 'dictee' ? null : 'golf';
   return 'menu';
 }
 function show(id, push = true) {
@@ -83,7 +98,7 @@ function show(id, push = true) {
   render[id]?.();
   if (id !== 'scr-intro') playSong(songFor(id));
   // tutoriel automatique à la première ouverture de chaque jeu
-  const g = { 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena, 'scr-tarot': 'tarot' }[id];
+  const g = { 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena, 'scr-tarot': 'tarot', 'scr-math': 'math', 'scr-dictee': 'dictee' }[id];
   if (g && push && prof() && !prof().tuto?.[g]) setTimeout(() => openTutorial(g), 350);
 }
 function openTutorial(g, onDone) {
@@ -119,6 +134,7 @@ function back() {
   }
   const cur = stack[stack.length - 1];
   if (cur === 'scr-game' || cur === 'scr-arena') { pause(); return true; }
+  if (cur === 'scr-quiz') { quiz?.stop(); quiz = null; active = null; }
   if (stack.length <= 1) return false;
   stack.pop();
   show(stack[stack.length - 1], false);
@@ -156,6 +172,7 @@ function gameStat(id) {
   if (id === 'minigolf') return `★ ${store.totalStars(p)} / ${totalGolfStars()}`;
   if (id === 'snake') { const st = Object.values(s?.levels || {}).reduce((a, r) => a + r.stars, 0); return `★ ${st} / ${SNAKE_LEVELS.length * 3} · record infini : ${s?.record || 0}`; }
   if (!s) return 'Pas encore joué';
+  if (id === 'math' || id === 'dictee') { const st = Object.values(p.stats?.[id] || {}).reduce((a, b) => a + b, 0); return `★ ${st} / ${id === 'math' ? 60 : 15}`; }
   if (id === 'tarot') { const t = store.getTarot(); return t && !t.finished ? `Partie en cours · ${t.rounds.length} manche(s)` : 'Compteur de points'; }
   if (id === 'pog') return `${s.pogs || 0} pogs gagnés · ${s.wins || 0} victoire${s.wins > 1 ? 's' : ''}`;
   return `${s.wins || 0} victoire${s.wins > 1 ? 's' : ''} · ${s.played || 0} partie${s.played > 1 ? 's' : ''}`;
@@ -249,6 +266,22 @@ const render = {
     }).join('') + `<button class="lvl endless" data-i="endless"><div class="num">∞</div><div class="nm">Mode infini</div>
         <div class="best">La vitesse augmente à chaque bille · record : ${s.record || 0}</div></button>`;
   },
+  'scr-math'() {
+    $('mathOps').innerHTML = Object.entries(OPS).map(([k, o]) => `<button data-op="${k}" class="${k === mathOp ? 'sel' : ''}"><b>${o.sign}</b> ${o.name}</button>`).join('');
+    const st = prof().stats?.math || {};
+    $('mathGrid').innerHTML = MATH_LEVELS.map((L, k) => {
+      const key = `${mathOp}-${L.n}`, locked = !expert() && k > 0 && !st[`${mathOp}-${L.n - 1}`];
+      const desc = mathOp === 'mix' ? 'les trois opérations' : L[mathOp];
+      return `<button class="lvl ${locked ? 'locked' : ''}" data-l="${L.n}"><div class="num">${locked ? '🔒' : L.n}</div><div class="nm">${desc}</div><div class="stars">${starsHtml(st[key] || 0)}</div></button>`;
+    }).join('');
+  },
+  'scr-dictee'() {
+    const st = prof().stats?.dictee || {};
+    $('dicteeGrid').innerHTML = DICTEE_LEVELS.map((L, k) => {
+      const locked = !expert() && k > 0 && !st[L.n - 1];
+      return `<button class="lvl ${locked ? 'locked' : ''}" data-l="${L.n}"><div class="num">${locked ? '🔒' : L.n}</div><div class="nm">${L.sub}</div><div class="stars">${starsHtml(st[L.n] || 0)}</div></button>`;
+    }).join('');
+  },
   'scr-mode'() {
     const a = ARENA[curArena];
     $('modeTitle').textContent = a.name;
@@ -310,6 +343,8 @@ $('gameGrid').onclick = (e) => {
   if (id === 'minigolf') show('scr-diff');
   else if (id === 'snake') show('scr-snake');
   else if (id === 'tarot') { show('scr-tarot'); openTarot(); }
+  else if (id === 'math') show('scr-math');
+  else if (id === 'dictee') show('scr-dictee');
   else { curArena = id; show('scr-mode'); }
 };
 
@@ -378,6 +413,38 @@ $('roomSeg').onclick = (e) => {
 };
 $('btnVsAI').onclick = () => { fx.tap(); startArena({ mode: 'ai', level: aiLevel }); };
 $('btnDuo').onclick = () => { fx.tap(); startArena({ mode: 'duo', level: aiLevel, p2: $('p2Name').value.trim() || 'Joueur 2' }); };
+
+// ---------- Calcul mental & dictée ----------
+let mathOp = 'add', quizKind = null, quizLevel = 1, quiz = null;
+$('mathOps').onclick = (e) => { const b = e.target.closest('[data-op]'); if (!b) return; fx.tap(); mathOp = b.dataset.op; render['scr-math'](); };
+$('mathGrid').onclick = (e) => { const b = e.target.closest('.lvl'); if (!b) return; if (b.classList.contains('locked')) return fx.lose(); fx.tap(); startQuiz('math', +b.dataset.l); };
+$('dicteeGrid').onclick = (e) => {
+  const b = e.target.closest('.lvl'); if (!b) return; if (b.classList.contains('locked')) return fx.lose();
+  fx.tap(); speak(' ', 1); // débloque la voix sur iPhone (doit partir d'un toucher)
+  startQuiz('dictee', +b.dataset.l);
+};
+function startQuiz(kind, level) {
+  quizKind = kind; quizLevel = level; active = 'quiz';
+  $('quizTitle').textContent = kind === 'math' ? `${OPS[mathOp].name} · niveau ${level}` : `Dictée · niveau ${level}`;
+  closeModal('mdResult');
+  if (stack[stack.length - 1] !== 'scr-quiz') show('scr-quiz'); else playSong(songFor('scr-quiz'));
+  quiz?.stop();
+  quiz = runQuiz($('quizBody'), { kind, op: mathOp, level, fx, onEnd: (r) => showQuizResult(r) });
+}
+function showQuizResult({ ok, total, stars, secs }) {
+  const key = quizKind === 'math' ? `${mathOp}-${quizLevel}` : quizLevel;
+  if (stars) store.recordLearn(quizKind, key, stars);
+  $('resTitle').textContent = stars === 3 ? 'Parfait !' : stars ? 'Bien joué !' : 'Encore un effort…';
+  $('resText').textContent = `${ok} bonne${ok > 1 ? 's' : ''} réponse${ok > 1 ? 's' : ''} sur ${total} en ${secs} s.${stars ? '' : ' Il en faut au moins 6 pour réussir le niveau.'}`;
+  popStars(stars);
+  const max = quizKind === 'math' ? 5 : 5, nxt = stars && quizLevel < max ? quizLevel + 1 : null;
+  $('btnNext').style.display = nxt ? '' : 'none';
+  $('btnNext').textContent = 'Niveau suivant';
+  $('btnNext').onclick = () => { fx.tap(); startQuiz(quizKind, nxt); };
+  $('btnRetry').textContent = 'Rejouer';
+  $('btnLevels').textContent = 'Liste des niveaux';
+  openModal('mdResult');
+}
 
 // ---------- Tarot ----------
 function openTarot() {
@@ -555,8 +622,8 @@ function showArenaResult(r) {
   $('btnLevels').textContent = 'Retour';
   openModal('mdResult');
 }
-$('btnRetry').onclick = () => { fx.tap(); if (active === 'golf') startLevel(curLevel); else startArena(arenaOpts); };
-$('btnLevels').onclick = () => { fx.tap(); quitGame(); };
+$('btnRetry').onclick = () => { fx.tap(); if (active === 'golf') startLevel(curLevel); else if (active === 'quiz') startQuiz(quizKind, quizLevel); else startArena(arenaOpts); };
+$('btnLevels').onclick = () => { fx.tap(); if (active === 'quiz') { closeModal('mdResult'); quiz?.stop(); quiz = null; active = null; stack.pop(); show(stack[stack.length - 1], false); } else quitGame(); };
 
 // Pause automatique quand l'appli passe en arrière-plan (et plus aucun son)
 document.addEventListener('visibilitychange', () => {

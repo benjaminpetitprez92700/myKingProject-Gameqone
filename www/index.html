@@ -79,6 +79,26 @@
   <div class="level-grid" id="snakeGrid"></div>
 </section>
 
+<!-- Calcul mental -->
+<section class="screen" id="scr-math">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Calcul mental</h2><button class="icon-btn help" data-help="math" aria-label="Comment jouer">?</button></header>
+  <div class="seg op-seg" id="mathOps"></div>
+  <div class="level-grid" id="mathGrid"></div>
+</section>
+
+<!-- Dictée -->
+<section class="screen" id="scr-dictee">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Dictée</h2><button class="icon-btn help" data-help="dictee" aria-label="Comment jouer">?</button></header>
+  <p class="muted small center">Une voix lit un mot : écris-le sans faute, accents compris !</p>
+  <div class="level-grid" id="dicteeGrid"></div>
+</section>
+
+<!-- Partie de calcul ou de dictée -->
+<section class="screen" id="scr-quiz">
+  <header class="bar"><button class="icon-btn" data-back>✕</button><h2 id="quizTitle"></h2><span></span></header>
+  <div id="quizBody"></div>
+</section>
+
 <!-- Tarot : compteur de points -->
 <section class="screen" id="scr-tarot">
   <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Tarot à 5</h2><button class="icon-btn help" data-help="tarot" aria-label="Comment jouer">?</button></header>

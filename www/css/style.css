@@ -523,3 +523,41 @@ h1, h2 { margin: 0; }
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
 .confetti i { position: absolute; top: -20px; width: 9px; height: 14px; border-radius: 2px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+/* ---------- Guerre Éclair / Calcul / Dictée ---------- */
+.g-stratego { background: linear-gradient(150deg, #6f8f3e, #2c3f1a); }
+.g-math { background: linear-gradient(150deg, #00b4d8, #0a4f8a); }
+.g-dictee { background: linear-gradient(150deg, #a35cff, #4a1c8c); }
+.army-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+.op-seg { max-width: 460px; margin: 0 auto 14px; width: 100%; flex-wrap: wrap; }
+.op-seg button { font-size: .82rem; color: var(--text); }
+.op-seg button b { font-size: 1.1rem; }
+.quiz { width: 100%; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.q-top { display: flex; justify-content: space-between; color: var(--muted); font-weight: 800; }
+.q-prog { height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
+.q-prog i { display: block; height: 100%; background: var(--qc); transition: width .3s; }
+.q-card { background: var(--card); border-radius: 22px; padding: 22px 16px; text-align: center; border: 2px solid transparent; transition: border-color .2s, background .2s; }
+.q-card.good { border-color: #2ecc71; background: rgba(46,204,113,.15); animation: pop .3s; }
+.q-card.bad { border-color: #ff6b6b; background: rgba(255,107,107,.12); animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.q-op { font-size: clamp(2.2rem, 11vw, 3.4rem); font-weight: 900; letter-spacing: 1px; }
+.q-input { margin: 14px auto 0; min-height: 64px; max-width: 320px; border-radius: 16px; background: rgba(0,0,0,.3); display: flex; align-items: center; justify-content: center; font-size: 2.4rem; font-weight: 900; color: var(--qc); }
+.q-input.dictee { font-size: 1.8rem; font-family: Georgia, serif; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.q-input .ph { color: rgba(255,255,255,.2); }
+.q-input .caret { width: 3px; height: 1.1em; background: var(--qc); margin-left: 3px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.q-fb { margin-top: 10px; font-size: 1.05rem; }
+.q-fb .ok { color: #2ecc71; } .q-fb .ko { color: #ff6b6b; }
+.q-fb .word { font-family: Georgia, serif; font-size: 1.3rem; } .q-fb u { color: #ff6b6b; text-decoration-thickness: 3px; }
+.q-listen { width: 88px; height: 88px; border-radius: 50%; border: 0; background: var(--qc); font-size: 2.4rem; cursor: pointer; box-shadow: 0 0 0 8px rgba(131,56,236,.25); animation: pulse 1.6s infinite; }
+.q-hint { margin-top: 10px; color: var(--muted); }
+.q-row { margin-top: 8px; } .q-small { border: 0; background: rgba(255,255,255,.1); color: #fff; border-radius: 99px; padding: 7px 14px; font-weight: 700; cursor: pointer; }
+.kbd { display: flex; flex-direction: column; gap: 6px; touch-action: manipulation; }
+.kr { display: flex; gap: 5px; justify-content: center; }
+.kbd button { flex: 1; border: 0; border-radius: 12px; background: linear-gradient(180deg, #3b3256, #2a2244); color: #fff; font-size: 1.2rem; font-weight: 800; box-shadow: 0 4px 0 #15102a; cursor: pointer; padding: 0; }
+.kbd button:active { transform: translateY(3px); box-shadow: 0 1px 0 #15102a; }
+.kbd.math button { height: 62px; font-size: 1.7rem; max-width: 120px; }
+.kbd.dictee button { height: 46px; min-width: 0; font-size: 1.05rem; }
+.kbd button.ok { background: linear-gradient(180deg, #4be08a, #1f9d5a); box-shadow: 0 4px 0 #0d5a32; }
+.kbd button.del { background: linear-gradient(180deg, #ff8080, #c73b3b); box-shadow: 0 4px 0 #7a1b1b; }
+.kbd button.space { flex: 3; }

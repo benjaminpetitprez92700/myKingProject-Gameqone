@@ -6,6 +6,44 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  stratego: {
+    name: 'Guerre Éclair',
+    slides: [
+      { title: 'Le but', text: "Capture le drapeau ennemi, caché parmi ses 40 pièces. Tu vois tes pièces, mais pas celles de l'adversaire (sauf celles déjà révélées).",
+        art: svg(`<rect width="240" height="160" fill="#5f7a3a"/>${[0,1,2,3,4,5].map(i=>`<rect x="${20+i*34}" y="20" width="28" height="28" rx="5" fill="#1f4e9e"/>`).join('')}<rect x="30" y="110" width="30" height="30" rx="5" fill="#b3261e"/><rect x="33" y="113" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="45" y="131" text-anchor="middle" font-size="12" font-weight="900" fill="#333">10</text><rect x="70" y="110" width="30" height="30" rx="5" fill="#b3261e"/><rect x="73" y="113" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="85" y="131" text-anchor="middle" font-size="12" font-weight="900" fill="#333">9</text><rect x="110" y="110" width="30" height="30" rx="5" fill="#b3261e"/><rect x="113" y="113" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="125" y="131" text-anchor="middle" font-size="12" font-weight="900" fill="#333">B</text><rect x="150" y="110" width="30" height="30" rx="5" fill="#b3261e"/><rect x="153" y="113" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="165" y="131" text-anchor="middle" font-size="12" font-weight="900" fill="#333">D</text><rect x="190" y="110" width="30" height="30" rx="5" fill="#b3261e"/><rect x="193" y="113" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="205" y="131" text-anchor="middle" font-size="12" font-weight="900" fill="#333">2</text><rect x="80" y="62" width="28" height="28" rx="6" fill="#3fa2d6"/><rect x="132" y="62" width="28" height="28" rx="6" fill="#3fa2d6"/>`) },
+      { title: 'Placer ses pièces', text: 'Au début, touche deux de tes pièces pour les échanger, ou « Mélanger ». Astuce : cache le drapeau au fond, entouré de bombes. Puis « Prêt ».',
+        art: svg(`<rect width="240" height="160" fill="#5f7a3a"/><rect x="60" y="60" width="30" height="30" rx="5" fill="#b3261e"/><rect x="63" y="63" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="75" y="81" text-anchor="middle" font-size="12" font-weight="900" fill="#333">D</text><rect x="100" y="60" width="30" height="30" rx="5" fill="#b3261e"/><rect x="103" y="63" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="115" y="81" text-anchor="middle" font-size="12" font-weight="900" fill="#333">B</text><rect x="140" y="60" width="30" height="30" rx="5" fill="#b3261e"/><rect x="143" y="63" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="155" y="81" text-anchor="middle" font-size="12" font-weight="900" fill="#333">B</text><rect x="100" y="100" width="30" height="30" rx="5" fill="#b3261e"/><rect x="103" y="103" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="115" y="121" text-anchor="middle" font-size="12" font-weight="900" fill="#333">B</text>${finger('t-tap')}`) },
+      { title: 'Se déplacer', text: "Une case à la fois, jamais en diagonale ni dans l'eau. L'éclaireur (2) peut filer en ligne droite. Les bombes et le drapeau ne bougent jamais.",
+        art: svg(`<rect width="240" height="160" fill="#5f7a3a"/><rect x="105" y="65" width="30" height="30" rx="5" fill="#b3261e"/><rect x="108" y="68" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="120" y="86" text-anchor="middle" font-size="12" font-weight="900" fill="#333">6</text><circle cx="120" cy="50" r="5" fill="#fff"/><circle cx="120" cy="110" r="5" fill="#fff"/><circle cx="90" cy="80" r="5" fill="#fff"/><circle cx="150" cy="80" r="5" fill="#fff"/>`) },
+      { title: 'Le combat', text: "Va sur une pièce ennemie pour l'attaquer : les deux sont révélées et la plus forte gagne (égalité : les deux tombent). L'espion bat le maréchal s'il attaque, le démineur désamorce les bombes, toute autre pièce saute sur une bombe.",
+        art: svg(`<rect width="240" height="160" fill="#111"/><rect x="50" y="60" width="30" height="30" rx="5" fill="#b3261e"/><rect x="53" y="63" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="65" y="81" text-anchor="middle" font-size="12" font-weight="900" fill="#333">8</text><rect x="160" y="60" width="30" height="30" rx="5" fill="#1f4e9e"/><rect x="163" y="63" width="24" height="24" rx="3" fill="#f4ecd8"/><text x="175" y="81" text-anchor="middle" font-size="12" font-weight="900" fill="#333">6</text><text x="120" y="88" text-anchor="middle" fill="#fff" font-weight="900" font-size="20">VS</text><text x="120" y="140" class="t-lbl">la plus forte gagne</text>`) },
+      { title: 'À deux', text: "En mode 2 joueurs, passe le téléphone à chaque tour : l'écran se cache pour que l'autre ne voie pas tes pièces.",
+        art: svg(`<rect width="240" height="160" fill="#0b0f08"/><text x="120" y="80" text-anchor="middle" font-size="44">📱</text><text x="120" y="125" class="t-lbl">Passe le téléphone</text>`) },
+    ],
+  },
+  math: {
+    name: 'Calcul mental',
+    slides: [
+      { title: 'Choisis ton calcul', text: 'Addition, soustraction, multiplication ou mélange, puis le niveau de 1 à 5. Réussis un niveau pour débloquer le suivant.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/>${['+','−','×','±'].map((o,i)=>`<rect x="${20+i*52}" y="40" width="44" height="44" rx="10" fill="${['#06d6a0','#3a86ff','#ff006e','#ffbe0b'][i]}"/><text x="${42+i*52}" y="72" text-anchor="middle" font-size="26" font-weight="900" fill="#fff">${o}</text>`).join('')}`) },
+      { title: 'Réponds au clavier', text: 'Tape le résultat avec les grosses touches, ⌫ pour effacer, puis ✓ pour valider.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="40" text-anchor="middle" font-size="24" font-weight="900" fill="#fff">7 × 8 = 56</text>${[0,1,2].map(r=>[0,1,2].map(c=>`<rect x="${78+c*30}" y="${55+r*30}" width="26" height="26" rx="6" fill="${r===2&&c===2?'#ffd34d':'rgba(255,255,255,.18)'}"/>`).join('')).join('')}${finger('t-tap')}`) },
+      { title: 'Les étoiles', text: '10 questions par niveau. 10 bonnes réponses : 3 étoiles, 8 : 2 étoiles, 6 : 1 étoile. En cas d\'erreur, la bonne réponse s\'affiche.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="80" text-anchor="middle" font-size="44" class="t-stars">★★★</text><text x="120" y="120" class="t-lbl">10 / 10</text>`) },
+    ],
+  },
+  dictee: {
+    name: 'Dictée',
+    slides: [
+      { title: 'Écoute', text: 'Une voix lit un mot. Appuie sur 🔊 pour le réentendre, ou sur 🐢 pour l\'entendre lentement.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><circle class="t-glow" cx="120" cy="70" r="34" fill="#8338ec"/><path d="M104 60 L112 60 L124 50 L124 90 L112 80 L104 80 Z" fill="#fff"/><path d="M132 58 Q142 70 132 82" stroke="#fff" stroke-width="4" fill="none"/>`) },
+      { title: 'Écris le mot', text: 'Tape le mot avec le clavier, accents compris (é, è, ê, à, ç, œ…), puis ✓ pour valider.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><rect x="40" y="26" width="160" height="36" rx="10" fill="rgba(255,255,255,.1)"/><text x="120" y="51" text-anchor="middle" font-size="20" fill="#fff" font-weight="800">château</text>${['é','è','ê','à','ç','ô'].map((k,i)=>`<rect x="${30+i*31}" y="90" width="27" height="30" rx="6" fill="rgba(255,255,255,.18)"/><text x="${43+i*31}" y="111" text-anchor="middle" fill="#fff" font-size="15">${k}</text>`).join('')}`) },
+      { title: 'La correction', text: 'Si c\'est faux, le mot s\'affiche avec les lettres à corriger soulignées. 5 niveaux, du CP au CM2.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="70" text-anchor="middle" font-size="26" fill="#fff" font-weight="900">ch<tspan text-decoration="underline" fill="#ff6b6b">â</tspan>teau</text><text x="120" y="115" class="t-lbl">la lettre soulignée était fausse</text>`) },
+    ],
+  },
+
   chess: {
     name: 'Échecs',
     slides: [
