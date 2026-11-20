@@ -248,3 +248,16 @@ export function moveLabel(st, m) {
   if (m.promo) s += '=' + FR[m.promo.toLowerCase()];
   return s;
 }
+
+// Analyse : score de chaque coup légal (du point de vue du joueur qui joue), du meilleur au moins bon.
+// Sert au mode assistant pour noter les coups du joueur.
+export function analyzeMoves(st, depth = 2) {
+  const ctx = { nodes: 0 }, out = [];
+  for (const m of order(legalMoves(st))) {
+    makeMove(st, m);
+    const sc = -negamax(st, depth - 1, -Infinity, Infinity, ctx, 1);
+    undoMove(st);
+    out.push({ m, sc });
+  }
+  return out.sort((a, b) => b.sc - a.sc);
+}

@@ -1,5 +1,5 @@
 // Échecs : plateau en bois, pièces dessinées, déplacements animés, contre l'ordi ou à deux.
-import { parseFEN, START, legalMoves, makeMove, undoMove, status, inCheck, kingSq, bestMove, moveLabel, colorOf } from './engine.js';
+import { parseFEN, START, legalMoves, makeMove, undoMove, status, inCheck, kingSq, bestMove, moveLabel, colorOf, analyzeMoves } from './engine.js';
 import { fx } from '../fx.js';
 
 const GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
@@ -20,7 +20,7 @@ export class Chess {
     if (this.vw < 50) { requestAnimationFrame(() => this.running && this.resize()); return; }
     this.canvas.width = Math.round(this.vw * dpr); this.canvas.height = Math.round(this.vh * dpr);
     const top = 130, bottom = 176;
-    this.size = Math.floor(Math.min(this.vw - 20, this.vh - top - bottom) / 8) * 8;
+    this.size = Math.floor(Math.min(this.vw - (this.opts?.assistant ? 64 : 20), this.vh - top - bottom) / 8) * 8;
     this.cell = this.size / 8;
     this.ox = Math.round((this.vw - this.size) / 2);
     this.oy = Math.round(top + (this.vh - top - bottom - this.size) / 2);
@@ -33,6 +33,7 @@ export class Chess {
     this.sel = null; this.targets = []; this.last = null; this.anim = null;
     this.captured = { w: [], b: [] }; this.labels = [];
     this.over = false; this.t = 0; this.paused = false;
+    this.grade = null; this.acc = { w: [], b: [] }; this.evalW = 0;
     // contre l'ordi : on joue les blancs
     this.human = opts.mode === 'ai' ? 'w' : null;
     window.addEventListener('resize', this._onResize);
@@ -52,6 +53,8 @@ export class Chess {
     this.moves = s.over ? [] : s.moves;
     // un échec et mat en un coup est-il possible pour le joueur humain ? (pour le signaler s'il le rate)
     this.mateMoves = !s.over && !this._aiTurn() ? this.moves.filter((m) => this._isMate(m)) : [];
+    // mode assistant : on analyse la position avant que le joueur ne joue
+    this.analysis = this.opts.assistant && !s.over && !this._aiTurn() ? analyzeMoves(this.st, 2) : null;
     const piece = (c) => this.captured[c].map((p) => GLYPH[p.toLowerCase()]).join('');
     const panel = (c, i) => `<div class="sp ${this.st.turn === c && !s.over ? 'on' : ''}"><b>${c === 'w' ? '⚪' : '⚫'} ${this.names[i]}</b><div class="balls cap">${piece(c === 'w' ? 'b' : 'w') || '<span class="muted">—</span>'}</div></div>`;
     this.hud.setScore(panel('w', 0) + panel('b', 1));
@@ -126,6 +129,23 @@ export class Chess {
     };
   }
 
+  // note le coup du joueur en le comparant au meilleur coup trouvé par l'analyse
+  _grade(m) {
+    const A = this.analysis, best = A[0], mine = A.find((x) => x.m.from === m.from && x.m.to === m.to && x.m.promo === m.promo) || A[A.length - 1];
+    const cap = (v) => Math.max(-3000, Math.min(3000, v));
+    const loss = Math.max(0, cap(best.sc) - cap(mine.sc));
+    const isBest = mine === best || loss <= 8;
+    const cls = isBest ? ['Meilleur coup !', '#2ecc71', '★'] : loss <= 40 ? ['Excellent', '#7ee08a', '✓'] : loss <= 90 ? ['Bon coup', '#a8e6a3', '👍'] : loss <= 200 ? ['Imprécision', '#ffd34d', '?!'] : loss <= 450 ? ['Erreur', '#ff9f43', '?'] : ['Gaffe !', '#ff5a5a', '??'];
+    const score = Math.round(Math.max(0, 100 - loss / 4));
+    const side = this.st.turn;
+    this.acc[side].push(score);
+    // avantage après le coup, vu des blancs (en pions)
+    this.evalW = (side === 'w' ? cap(mine.sc) : -cap(mine.sc)) / 100;
+    this.grade = { label: cls[0], color: cls[1], icon: cls[2], score, best: isBest ? null : moveLabel(this.st, best.m), bestMove: isBest ? null : best.m, who: side, t: 0 };
+    if (isBest) setTimeout(() => fx.star(2), 250); else if (loss > 200) setTimeout(() => fx.gauge(), 250);
+  }
+  _accuracy(side) { const a = this.acc[side]; return a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null; }
+
   _isMate(m) {
     makeMove(this.st, m);
     const s = status(this.st);
@@ -140,6 +160,7 @@ export class Chess {
       this.missed = { from: best.from, to: best.to, label: moveLabel(this.st, best) + '#', t: 0, who: this.st.turn };
       setTimeout(() => fx.gauge(), 400);
     } else if (!byAI) this.missed = null;
+    if (!byAI && this.analysis) this._grade(m);
     this.labels.push(moveLabel(this.st, m));
     if (m.cap) this.captured[colorOf(m.piece)].push(m.cap);
     this.anim = { m, t: 0, piece: m.promo || m.piece };
@@ -160,7 +181,7 @@ export class Chess {
     setTimeout(() => this.running && this.hud.end({
       won: this.human ? w === 0 : true,
       title: w == null ? 'Match nul' : this.human ? (w === 0 ? 'Victoire !' : 'Défaite…') : `${this.names[w]} gagne !`,
-      text: `${why} ${this.labels.length} demi-coups joués.`, winner: w,
+      text: `${why} ${this.labels.length} demi-coups joués.${this.opts.assistant ? ' Précision : ' + ['w', 'b'].filter((c) => this._accuracy(c) != null).map((c) => `${this.names[c === 'w' ? 0 : 1]} ${this._accuracy(c)} %`).join(', ') + '.' : ''}`, winner: w,
     }), 1100);
   }
 
@@ -171,6 +192,7 @@ export class Chess {
     if (!this.paused) {
       this.t += dt;
       if (this.missed) { this.missed.t += dt; if (this.missed.t > 7) this.missed = null; }
+      if (this.grade) this.grade.t += dt;
       if (this.anim) { this.anim.t += dt / 0.22; if (this.anim.t >= 1) { this.anim = null; this._refresh(); } }
     }
     this._render();
@@ -212,6 +234,40 @@ export class Chess {
     if (w) { gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#d8cdb8'); } else { gr.addColorStop(0, '#4a4a52'); gr.addColorStop(1, '#0d0d10'); }
     g.fillStyle = gr; g.fillText(ch, x, y - lift);
     g.restore();
+  }
+
+  // mode assistant : note du coup + meilleur coup en pointillés
+  _renderGrade(g, X, Y, cs) {
+    const G = this.grade, k = Math.min(1, G.t / 0.25);
+    g.save(); g.globalAlpha = k;
+    if (G.bestMove && G.t < 6) {
+      const x0 = X(G.bestMove.from) + cs / 2, y0 = Y(G.bestMove.from) + cs / 2, x1 = X(G.bestMove.to) + cs / 2, y1 = Y(G.bestMove.to) + cs / 2;
+      g.setLineDash([8, 6]); g.strokeStyle = 'rgba(46,204,113,0.85)'; g.lineWidth = cs * 0.1; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.setLineDash([]);
+      g.fillStyle = 'rgba(46,204,113,0.9)'; g.beginPath(); g.arc(x1, y1, cs * 0.14, 0, Math.PI * 2); g.fill();
+    }
+    const bw = Math.min(this.vw - 20, 340), bx = (this.vw - bw) / 2, by = this.oy + this.size + 22;
+    g.fillStyle = 'rgba(12,10,24,0.92)'; g.strokeStyle = G.color; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(bx, by, bw, 54, 14); g.fill(); g.stroke();
+    g.fillStyle = G.color; g.beginPath(); g.arc(bx + 27, by + 27, 17, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#111'; g.font = '900 14px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(G.icon, bx + 27, by + 28);
+    g.textAlign = 'left'; g.fillStyle = G.color; g.font = '900 15px system-ui';
+    g.fillText(`${G.label}  ·  ${G.score}/100`, bx + 54, by + 18);
+    g.fillStyle = '#ddd'; g.font = '600 12.5px system-ui';
+    const acc = this._accuracy(G.who);
+    g.fillText(G.best ? `Meilleur coup : ${G.best} (en vert)  ·  précision ${acc} %` : `Bravo !  ·  précision ${acc} %`, bx + 54, by + 38, bw - 64);
+    g.restore();
+  }
+
+  // barre d'avantage à gauche du plateau (blanc en bas, noir en haut)
+  _renderEvalBar(g) {
+    const x = this.ox - 24, w = 8, y = this.oy, h = this.size;
+    if (x < 2) return;
+    const p = 0.5 + 0.5 * Math.tanh(this.evalW / 4);
+    g.fillStyle = '#1a1a1f'; g.beginPath(); g.roundRect(x, y, w, h, 4); g.fill();
+    g.fillStyle = '#f1ece0'; g.beginPath(); g.roundRect(x, y + h * (1 - p), w, h * p, 4); g.fill();
+    g.fillStyle = '#ffd34d'; g.font = '800 10px system-ui'; g.textAlign = 'center';
+    g.fillText((this.evalW > 0 ? '+' : '') + this.evalW.toFixed(1), x + w / 2, y + h + 12);
   }
 
   // flèche dorée sur le plateau + bandeau d'explication sur le côté
@@ -271,6 +327,8 @@ export class Chess {
       this._piece(g, a.piece, x + cs / 2, y + cs / 2, Math.sin(k * Math.PI) * cs * 0.25);
     }
     if (this.missed) this._renderMissed(g, X, Y, cs);
+    else if (this.grade && this.opts.assistant) this._renderGrade(g, X, Y, cs);
+    if (this.opts.assistant) this._renderEvalBar(g);
     // coups possibles
     for (const m of this.targets) {
       const x = X(m.to) + cs / 2, y = Y(m.to) + cs / 2;

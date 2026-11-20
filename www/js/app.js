@@ -307,6 +307,8 @@ const render = {
     $('modeDesc').textContent = a.desc;
     $('optPoints').style.display = curArena === 'petanque' ? '' : 'none';
     $('optRoom').style.display = curArena === 'pog' ? '' : 'none';
+    $('optAssist').style.display = curArena === 'chess' ? '' : 'none';
+    $('chessAssist').checked = !!prof().settings.chessAssist;
     const room = prof().settings.pogRoom || 'random';
     $('roomSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.r === room));
     $('modeStats').textContent = gameStat(curArena);
@@ -429,6 +431,7 @@ $('ptsSeg').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return; fx.tap(); ptsTarget = +b.dataset.p;
   $('ptsSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
 };
+$('chessAssist').onchange = (e) => { fx.tap(); const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, chessAssist: e.target.checked } }); };
 $('roomSeg').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return; fx.tap();
   const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, pogRoom: b.dataset.r } });
@@ -561,7 +564,7 @@ const hud = {
 function startArena(opts) {
   const p = prof();
   arenaOpts = {
-    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random',
+    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist,
     names: [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };

@@ -599,3 +599,5 @@ h1, h2 { margin: 0; }
 .sbtn.sell { background: linear-gradient(180deg, #ff9a6b, #d4552a); box-shadow: 0 6px 0 #7a2a10; }
 .sbtn:disabled { opacity: .45; animation: none; }
 .score-bar .sp .pts.neg { color: #ff6b6b; }
+#optAssist { padding: 0; background: transparent; }
+#optAssist .toggle { background: var(--card); }
