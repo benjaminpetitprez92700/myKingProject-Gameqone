@@ -13,6 +13,7 @@ import { CardGolf } from './cards/golf.js';
 import { Rami } from './cards/rami.js';
 import { Island } from './island/game.js';
 import { HUB_ART } from './hubart.js';
+import { hostGame, joinGame } from './net.js';
 import { TowerDefense, TD_LEVELS } from './tower/game.js';
 import { OPS, MATH_LEVELS, DICTEE_LEVELS, runQuiz, speak } from './learn/quiz.js';
 import { playIntro } from './intro.js';
@@ -324,6 +325,7 @@ const render = {
     $('optAssist').style.display = curArena === 'chess' ? '' : 'none';
     $('optStyle').style.display = curArena === 'stratego' ? '' : 'none';
     $('optGolf').style.display = curArena === 'golfcards' ? '' : 'none';
+    $('optOnline').style.display = ONLINE_GAMES.includes(curArena) ? '' : 'none';
     if (curArena === 'golfcards') renderGolfCfg();
     const pst = prof().settings.strategoStyle || 'france';
     $('styleSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === pst));
@@ -454,6 +456,36 @@ $('styleSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
   fx.tap(); $('styleSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
   const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoStyle: b.dataset.s } });
 }));
+// ---------- Jeu en ligne ----------
+const ONLINE_GAMES = ['chess', 'stratego'];
+let onlineReq = null;
+function onlineModal(title, code, text) { $('onTitle').textContent = title; $('onCode').textContent = code; $('onText').textContent = text; openModal('mdOnline'); }
+const onlineFail = (m) => { onlineReq = null; $('onCode').textContent = '⚠️'; $('onText').textContent = m; $('onCancel').textContent = 'Fermer'; };
+function startOnline(link, side, names) {
+  closeModal('mdOnline'); onlineReq = null;
+  startArena({ mode: 'online', net: link, side, level: aiLevel, names });
+}
+$('btnHost').onclick = async () => {
+  fx.tap(); $('onCancel').textContent = 'Annuler';
+  onlineModal('Créer une partie', '…', 'Connexion au serveur…');
+  const me = prof().name;
+  onlineReq = await hostGame({ game: curArena, name: me,
+    onCode: (c) => { $('onCode').textContent = c; $('onText').textContent = `Donne ce code à ton ami : sur son téléphone, il ouvre « ${ARENA[curArena].name} », touche « Rejoindre » et tape le code.`; },
+    onReady: (link, other) => startOnline(link, 0, [me, other]),
+    onError: onlineFail });
+};
+$('btnJoin').onclick = async () => {
+  fx.tap();
+  const code = $('joinCode').value.trim().toUpperCase();
+  if (code.length !== 4) return hud.toast('Le code fait 4 caractères', 1500);
+  $('onCancel').textContent = 'Annuler';
+  onlineModal('Rejoindre', code, 'Connexion à la partie de ton ami…');
+  const me = prof().name;
+  onlineReq = await joinGame({ code, game: curArena, name: me, onReady: (link, other) => startOnline(link, 1, [other, me]), onError: onlineFail });
+};
+$('joinCode').oninput = (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
+$('onCancel').onclick = () => { fx.tap(); onlineReq?.cancel(); onlineReq = null; closeModal('mdOnline'); };
+
 function golfCfg() { return { players: 2, cols: 4, rows: 2, ...(prof().settings.golfCfg || {}) }; }
 function renderGolfCfg() {
   const c = golfCfg();
@@ -500,6 +532,7 @@ $('dicteeGrid').onclick = (e) => {
   startQuiz('dictee', +b.dataset.l);
 };
 function startQuiz(kind, level) {
+  $('btnRetry').style.display = '';
   quizKind = kind; quizLevel = level; active = 'quiz';
   $('quizTitle').textContent = kind === 'math' ? `${OPS[mathOp].name} · niveau ${level}` : `Dictée · niveau ${level}`;
   closeModal('mdResult');
@@ -543,6 +576,7 @@ let golf = null, arena = null, arenaOpts = null, active = null;
 let hintShown = false;
 
 function startLevel(lv) {
+  $('btnRetry').style.display = '';
   curLevel = lv; active = 'golf';
   if (stack[stack.length - 1] !== 'scr-game') show('scr-game');
   closeModal('mdResult'); closeModal('mdPause');
@@ -595,10 +629,11 @@ const hud = {
 };
 
 function startArena(opts) {
+  $('btnRetry').style.display = '';
   const p = prof();
   arenaOpts = {
     ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', golf: golfCfg(),
-    names: [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
+    names: opts.names || [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };
   active = 'arena';
@@ -705,6 +740,7 @@ function showArenaResult(r) {
   if (arenaOpts.mode === 'ai') popStars(r.won ? { facile: 1, moyen: 2, difficile: 3 }[arenaOpts.level] : 0);
   else $('resStars').style.display = 'none';
   $('btnNext').style.display = 'none';
+  $('btnRetry').style.display = arenaOpts.mode === 'online' ? 'none' : '';
   $('btnRetry').textContent = 'Rejouer';
   $('btnLevels').textContent = 'Retour';
   openModal('mdResult');

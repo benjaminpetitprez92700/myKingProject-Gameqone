@@ -144,6 +144,12 @@
       <label class="field"><span>Nom du joueur 2</span><input id="p2Name" maxlength="16" autocomplete="off" placeholder="Joueur 2"></label>
       <button class="btn ghost" id="btnDuo">Jouer à deux</button>
     </div>
+    <div class="mode-card" id="optOnline">
+      <h3>🌐 En ligne avec un ami</h3>
+      <p class="muted small">Chacun sur son téléphone, avec internet (Wi-Fi ou 4G). L'un crée la partie, l'autre tape le code.</p>
+      <button class="btn primary" id="btnHost">Créer une partie</button>
+      <div class="join-row"><input id="joinCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn ghost" id="btnJoin">Rejoindre</button></div>
+    </div>
     <div class="mode-card" id="optAssist">
       <label class="toggle"><span>🎓 Mode assistant<small>Note chaque coup sur 100, montre le meilleur coup et l'avantage</small></span><input type="checkbox" id="chessAssist"><i></i></label>
     </div>
@@ -250,6 +256,15 @@
 </div>
 
 <div class="modal tarot-modal" id="mdTarotRound"><div class="card"></div></div>
+
+<div class="modal" id="mdOnline">
+  <div class="card">
+    <h2 id="onTitle">En ligne</h2>
+    <div class="online-code" id="onCode">…</div>
+    <p id="onText" class="muted"></p>
+    <button class="btn ghost" id="onCancel">Annuler</button>
+  </div>
+</div>
 
 <div class="modal" id="mdConfirm">
   <div class="card">

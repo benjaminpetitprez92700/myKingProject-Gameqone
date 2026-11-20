@@ -688,3 +688,10 @@ h1, h2 { margin: 0; }
 .cg-opp.on { border-color: #ffd34d; box-shadow: 0 0 12px rgba(255,211,77,.4); }
 .cg-opp .cg-grid { gap: 3px; padding: 2px; }
 .cg-opp .cg-who { font-size: .72rem; }
+
+/* ---------- Jeu en ligne ---------- */
+#optOnline { border: 2px solid rgba(58,134,255,.5); }
+.join-row { display: flex; gap: 8px; margin-top: 10px; }
+.join-row input { flex: 1; min-width: 0; text-align: center; font-size: 1.4rem; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; border-radius: 14px; border: 2px solid rgba(255,255,255,.15); background: rgba(0,0,0,.3); color: #fff; padding: 10px; }
+.join-row .btn { flex: 0 0 auto; width: auto; padding-left: 18px; padding-right: 18px; margin: 0; }
+.online-code { font-size: 3rem; font-weight: 900; letter-spacing: 10px; color: var(--accent); text-align: center; margin: 10px 0; text-shadow: 0 0 18px rgba(255,211,77,.4); }

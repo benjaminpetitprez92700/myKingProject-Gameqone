@@ -36,15 +36,41 @@ export class Stratego {
     this.hist = []; this.lost = [[], []];
     this.sel = null; this.targets = []; this.last = null; this.combat = null; this.anim = null;
     this.over = false; this.t = 0; this.paused = false;
-    this.duo = opts.mode !== 'ai';
+    this.online = opts.mode === 'online'; this.me = this.online ? opts.side : 0;
+    this.duo = opts.mode === 'duo';
     window.addEventListener('resize', this._onResize);
     this.resize();
     if (!this.running) { this.running = true; this.lastT = performance.now(); requestAnimationFrame(this._loop); }
     // placement
+    if (this.online) { this.myReady = false; this.remoteReady = false; this.queue = []; this._net(opts.net); return this._setup(this.me); }
     for (const c of autoSetup(1)) this.board[c.y * SIZE + c.x] = { side: 1, id: c.id, revealed: false, moved: false };
     this._setup(0);
   }
-  stop() { this.running = false; window.removeEventListener('resize', this._onResize); this.hud.controls(null); }
+  stop() { this.running = false; window.removeEventListener('resize', this._onResize); this.hud.controls(null); this.opts?.net?.close(); }
+
+  // ---------- En ligne ----------
+  _net(link) {
+    const foe = 1 - this.me;
+    link.on('setup', (msg) => {
+      for (let i = 0; i < 100; i++) if (this.board[i]?.side === foe) this.board[i] = null;
+      for (const c of msg.pieces) this.board[c.i] = { side: foe, id: c.id, revealed: false, moved: false };
+      this.remoteReady = true;
+      if (this.myReady) this._startOnline();
+      else this.hud.toast(`${this.names[foe]} est prêt !`, 1400);
+    });
+    link.on('move', (msg) => { this.queue.push(msg); this._flush(); });
+    link.onClose(() => { if (this.running && !this.over) { this.hud.toast('Ton adversaire a quitté la partie', 2500); this._end(this.me, "L'adversaire a quitté la partie."); } });
+  }
+  _flush() {
+    if (!this.queue?.length || this.anim || this.combat || this.over || this.phase !== 'play' || this.turn === this.me) return;
+    const m = this.queue.shift();
+    this._move(m.from, m.to, true);
+  }
+  _startOnline() {
+    this.phase = 'play'; this.turn = 0; this.viewer = this.me;
+    this.hud.toast(this.me === 0 ? 'C\'est parti : tu commences !' : `C'est parti : ${this.names[0]} commence`, 1800);
+    this._beginTurn();
+  }
   setPaused(p) { this.paused = p; }
 
   // ---------- Placement ----------
@@ -68,6 +94,13 @@ export class Stratego {
 
   _ready() {
     this.hud.controls(null); this.sel = null;
+    if (this.online) {
+      const pieces = []; for (let i = 0; i < 100; i++) if (this.board[i]?.side === this.me) pieces.push({ i, id: this.board[i].id });
+      this.opts.net.send({ t: 'setup', pieces }); this.myReady = true;
+      if (this.remoteReady) return this._startOnline();
+      this.phase = 'waiting'; this.hud.setChip('En attente…');
+      return this.hud.toast(`En attente de ${this.names[1 - this.me]}…`, 2400);
+    }
     if (this.duo && this.setupSide === 0) return this._pass(1, () => this._setup(1));
     this.phase = 'play'; this.turn = 0;
     if (this.duo) this._pass(0, () => this._beginTurn()); else this._beginTurn();
@@ -85,12 +118,13 @@ export class Stratego {
   }
 
   _beginTurn() {
-    this.phase = 'play'; this.viewer = this.duo ? this.turn : 0;
+    this.phase = 'play'; this.viewer = this.online ? this.me : this.duo ? this.turn : 0;
     this.moves = allMoves(this.board, this.turn, this.hist);
     this._hudScore();
-    this.hud.setChip(this.turn === 0 || this.duo ? `À ${this.names[this.turn]}` : "L'ordi réfléchit…");
+    this.hud.setChip(this.online ? (this.turn === this.me ? 'À toi de jouer' : `À ${this.names[this.turn]}`) : this.turn === 0 || this.duo ? `À ${this.names[this.turn]}` : "L'ordi réfléchit…");
     if (!this.moves.length) return this._end(1 - this.turn, `${this.names[this.turn]} ne peut plus bouger.`);
-    if (!this.duo && this.turn === 1) setTimeout(() => this.running && this._aiPlay(), 650);
+    if (this.online) setTimeout(() => this._flush(), 50);
+    else if (!this.duo && this.turn === 1) setTimeout(() => this.running && this._aiPlay(), 650);
   }
 
   // ---------- Entrées ----------
@@ -112,7 +146,7 @@ export class Stratego {
       else { const a = this.board[this.sel]; this.board[this.sel] = p; this.board[i] = a; this.sel = null; fx.cushion(0.5); }
       return;
     }
-    if (this.phase !== 'play' || (!this.duo && this.turn === 1)) return;
+    if (this.phase !== 'play' || (this.online ? this.turn !== this.me : !this.duo && this.turn === 1)) return;
     if (this.sel != null && this.targets.includes(i)) return this._move(this.sel, i);
     const p = this.board[i];
     if (p && p.side === this.turn && movable(p.id)) {
@@ -124,8 +158,9 @@ export class Stratego {
   }
 
   // ---------- Jeu ----------
-  _move(from, to) {
+  _move(from, to, remote = false) {
     const a = this.board[from], d = this.board[to];
+    if (this.online && !remote) this.opts.net.send({ t: 'move', from, to });
     this.sel = null; this.targets = [];
     this.hist.push({ side: a.side, from, to });
     a.moved = true;
@@ -166,12 +201,14 @@ export class Stratego {
   }
 
   _end(winner, why) {
-    this.over = true; this.phase = 'over'; this.viewer = this.duo ? this.viewer : 0;
+    if (this.over) return;
+    const me = this.online ? this.me : 0;
+    this.over = true; this.phase = 'over'; this.viewer = this.duo ? this.viewer : me;
     for (const p of this.board) if (p) p.revealed = true;
-    if (winner === 0 || this.duo) fx.win(); else fx.lose();
+    if (winner === me || this.duo) fx.win(); else fx.lose();
     setTimeout(() => this.running && this.hud.end({
-      won: this.duo ? true : winner === 0,
-      title: this.duo ? `${this.names[winner]} gagne !` : winner === 0 ? 'Victoire !' : 'Défaite…',
+      won: this.duo ? true : winner === me,
+      title: this.duo ? `${this.names[winner]} gagne !` : winner === me ? 'Victoire !' : 'Défaite…',
       text: why, winner,
     }), 1600);
   }

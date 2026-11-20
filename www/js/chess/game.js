@@ -35,26 +35,40 @@ export class Chess {
     this.over = false; this.t = 0; this.paused = false;
     this.grade = null; this.acc = { w: [], b: [] }; this.evalW = 0;
     // contre l'ordi : on joue les blancs
-    this.human = opts.mode === 'ai' ? 'w' : null;
+    this.online = opts.mode === 'online';
+    this.human = opts.mode === 'ai' ? 'w' : this.online ? (opts.side === 0 ? 'w' : 'b') : null;
+    this.flip = this.online && this.human === 'b';
+    if (this.online) this._net(opts.net);
     window.addEventListener('resize', this._onResize);
     this.resize();
     this._refresh();
-    this.hud.toast(`${this.names[0]} joue les blancs`, 1400);
+    this.hud.toast(this.online ? `Tu joues les ${this.human === 'w' ? 'blancs' : 'noirs'}` : `${this.names[0]} joue les blancs`, 1600);
     if (!this.running) { this.running = true; this.last_t = performance.now(); requestAnimationFrame(this._loop); }
   }
-  stop() { this.running = false; window.removeEventListener('resize', this._onResize); this.hud.controls(null); }
+  stop() { this.running = false; window.removeEventListener('resize', this._onResize); this.hud.controls(null); this.opts?.net?.close(); }
+
+  // ---------- En ligne ----------
+  _net(link) {
+    link.on('move', (msg) => {
+      const m = this.moves?.find((x) => x.from === msg.from && x.to === msg.to && (x.promo || null) === (msg.promo || null));
+      if (m && !this.over) this._play(m, true);
+    });
+    link.on('resign', () => this._end({ over: true, result: this.human, reason: 'abandon' }));
+    link.onClose(() => { if (this.running && !this.over) { this.hud.toast('Ton adversaire a quitté la partie', 2500); this._end({ over: true, result: this.human, reason: 'départ' }); } });
+  }
+  _remoteTurn() { return this.online && this.st.turn !== this.human; }
   setPaused(p) { this.paused = p; }
 
   _sideName(c) { return c === 'w' ? this.names[0] : this.names[1]; }
-  _aiTurn() { return this.human && this.st.turn !== this.human; }
+  _aiTurn() { return this.opts.mode === 'ai' && this.st.turn !== this.human; }
 
   _refresh() {
     const s = status(this.st);
     this.moves = s.over ? [] : s.moves;
     // un échec et mat en un coup est-il possible pour le joueur humain ? (pour le signaler s'il le rate)
-    this.mateMoves = !s.over && !this._aiTurn() ? this.moves.filter((m) => this._isMate(m)) : [];
+    this.mateMoves = !s.over && !this._aiTurn() && !this._remoteTurn() ? this.moves.filter((m) => this._isMate(m)) : [];
     // mode assistant : on analyse la position avant que le joueur ne joue
-    this.analysis = this.opts.assistant && !s.over && !this._aiTurn() ? analyzeMoves(this.st, 2) : null;
+    this.analysis = this.opts.assistant && !s.over && !this._aiTurn() && !this._remoteTurn() ? analyzeMoves(this.st, 2) : null;
     const piece = (c) => this.captured[c].map((p) => GLYPH[p.toLowerCase()]).join('');
     const panel = (c, i) => `<div class="sp ${this.st.turn === c && !s.over ? 'on' : ''}"><b>${c === 'w' ? '⚪' : '⚫'} ${this.names[i]}</b><div class="balls cap">${piece(c === 'w' ? 'b' : 'w') || '<span class="muted">—</span>'}</div></div>`;
     this.hud.setScore(panel('w', 0) + panel('b', 1));
@@ -76,12 +90,13 @@ export class Chess {
 
   _controls() {
     if (this.promo) return;
-    const canUndo = this.st.history.length && !this.over && !this.thinking;
+    const canUndo = !this.online && this.st.history.length && !this.over && !this.thinking;
     const el = this.hud.controls(`<div class="chess-ctl"><button class="btn ghost" data-a="undo" ${canUndo ? '' : 'disabled'}>↶ Annuler le coup</button><button class="btn ghost" data-a="resign" ${this.over ? 'disabled' : ''}>🏳 Abandonner</button></div>`);
     el.onclick = (e) => {
       const b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
       fx.tap();
       if (b.dataset.a === 'undo') this._undo();
+      else if (this.online) { this.opts.net.send({ t: 'resign' }); this._end({ over: true, result: this.human === 'w' ? 'b' : 'w', reason: 'abandon' }); }
       else this._end({ over: true, result: this.human ? (this.human === 'w' ? 'b' : 'w') : (this.st.turn === 'w' ? 'b' : 'w'), reason: 'abandon' });
     };
   }
@@ -102,11 +117,12 @@ export class Chess {
     const r = this.canvas.getBoundingClientRect();
     const x = e.clientX - r.left - this.ox, y = e.clientY - r.top - this.oy;
     if (x < 0 || y < 0 || x >= this.size || y >= this.size) return -1;
-    return Math.floor(y / this.cell) * 8 + Math.floor(x / this.cell);
+    const sq = Math.floor(y / this.cell) * 8 + Math.floor(x / this.cell);
+    return this.flip ? 63 - sq : sq;
   }
 
   _tap(e) {
-    if (!this.running || this.paused || this.over || this.anim || this.promo || this._aiTurn() || this.thinking) return;
+    if (!this.running || this.paused || this.over || this.anim || this.promo || this._aiTurn() || this._remoteTurn() || this.thinking) return;
     const sq = this._xy(e); if (sq < 0) return;
     const p = this.st.board[sq];
     const tgt = this.targets.filter((m) => m.to === sq);
@@ -161,6 +177,7 @@ export class Chess {
       setTimeout(() => fx.gauge(), 400);
     } else if (!byAI) this.missed = null;
     if (!byAI && this.analysis) this._grade(m);
+    if (!byAI && this.online) this.opts.net.send({ t: 'move', from: m.from, to: m.to, promo: m.promo || null });
     this.labels.push(moveLabel(this.st, m));
     if (m.cap) this.captured[colorOf(m.piece)].push(m.cap);
     this.anim = { m, t: 0, piece: m.promo || m.piece };
@@ -176,11 +193,12 @@ export class Chess {
     this.over = true;
     this._controls();
     const w = s.result === 'draw' ? null : s.result === 'w' ? 0 : 1;
-    const why = { mat: 'Échec et mat !', pat: 'Pat : match nul.', abandon: 'Abandon.' }[s.reason] || `Match nul (${s.reason}).`;
-    if (w === 0 || (w === 1 && !this.human)) fx.win(); else if (w === 1) fx.lose();
+    const why = { mat: 'Échec et mat !', pat: 'Pat : match nul.', abandon: 'Abandon.', 'départ': "L'adversaire a quitté la partie." }[s.reason] || `Match nul (${s.reason}).`;
+    const meIdx = this.human === 'b' ? 1 : 0;
+    if (w === meIdx || (w != null && !this.human)) fx.win(); else if (w != null) fx.lose();
     setTimeout(() => this.running && this.hud.end({
-      won: this.human ? w === 0 : true,
-      title: w == null ? 'Match nul' : this.human ? (w === 0 ? 'Victoire !' : 'Défaite…') : `${this.names[w]} gagne !`,
+      won: this.human ? w === meIdx : true,
+      title: w == null ? 'Match nul' : this.human ? (w === meIdx ? 'Victoire !' : 'Défaite…') : `${this.names[w]} gagne !`,
       text: `${why} ${this.labels.length} demi-coups joués.${this.opts.assistant ? ' Précision : ' + ['w', 'b'].filter((c) => this._accuracy(c) != null).map((c) => `${this.names[c === 'w' ? 0 : 1]} ${this._accuracy(c)} %`).join(', ') + '.' : ''}`, winner: w,
     }), 1100);
   }
@@ -303,7 +321,8 @@ export class Chess {
     if (!this.wood) this.wood = this._woodCanvas();
     g.fillStyle = 'rgba(0,0,0,0.5)'; g.beginPath(); g.roundRect(this.ox - 14 + 6, this.oy - 14 + 10, this.size + 28, this.size + 28, 12); g.fill();
     g.drawImage(this.wood, this.ox - 14, this.oy - 14, this.size + 28, this.size + 28);
-    const X = (i) => this.ox + (i & 7) * cs, Y = (i) => this.oy + (i >> 3) * cs;
+    const F = (i) => (this.flip ? 63 - i : i);
+    const X = (i) => this.ox + (F(i) & 7) * cs, Y = (i) => this.oy + (F(i) >> 3) * cs;
     // dernier coup, sélection, échec
     if (this.last) for (const sq of [this.last.from, this.last.to]) { g.fillStyle = 'rgba(255,214,60,0.38)'; g.fillRect(X(sq), Y(sq), cs, cs); }
     if (this.sel != null) { g.fillStyle = 'rgba(80,200,120,0.5)'; g.fillRect(X(this.sel), Y(this.sel), cs, cs); }
