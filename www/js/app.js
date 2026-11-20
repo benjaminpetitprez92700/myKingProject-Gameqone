@@ -9,6 +9,7 @@ import { Snake, SNAKE_LEVELS } from './snake/game.js';
 import { Chess } from './chess/game.js';
 import { mountTarot } from './tarot/ui.js';
 import { Stratego } from './stratego/game.js';
+import { TowerDefense, TD_LEVELS } from './tower/game.js';
 import { OPS, MATH_LEVELS, DICTEE_LEVELS, runQuiz, speak } from './learn/quiz.js';
 import { playIntro } from './intro.js';
 import { showTutorial } from './tutorial.js';
@@ -21,6 +22,10 @@ const starsHtml = (n, total = 3) => Array.from({ length: total }, (_, i) => `<i 
 
 // ---------- Illustrations des cartes ----------
 const ART = {
+  tower: `<svg viewBox="0 0 120 120"><rect x="6" y="10" width="108" height="100" rx="12" fill="#5f9a3c"/><path d="M14 30 L70 30 L70 70 L104 70" stroke="#7a5a35" stroke-width="16" fill="none" stroke-linejoin="round"/><path d="M14 30 L70 30 L70 70 L104 70" stroke="#c9a46a" stroke-width="12" fill="none" stroke-linejoin="round"/>
+    <g class="bob"><circle cx="40" cy="58" r="13" fill="#a8a296"/><circle cx="40" cy="58" r="9" fill="#555c66"/><rect x="40" y="54" width="14" height="8" rx="2" fill="#2b2f36"/></g>
+    <circle cx="90" cy="44" r="12" fill="#a8a296"/><circle cx="90" cy="44" r="7" fill="#a35cff"/><circle cx="58" cy="30" r="6" fill="#c0392b"/><circle cx="30" cy="30" r="5" fill="#f39c12"/>
+    <rect x="86" y="80" width="22" height="22" fill="#9aa0a8"/><path d="M86 80 L97 70 L108 80" fill="#c0392b"/></svg>`,
   stratego: `<svg viewBox="0 0 120 120"><rect x="8" y="14" width="104" height="92" rx="8" fill="#5f7a3a"/><rect x="40" y="52" width="16" height="16" rx="3" fill="#3fa2d6"/><rect x="66" y="52" width="16" height="16" rx="3" fill="#3fa2d6"/>
     ${[0,1,2,3].map(i=>`<rect x="${16+i*24}" y="22" width="18" height="20" rx="4" fill="#1f4e9e"/>`).join('')}
     <g class="bob"><rect x="20" y="76" width="22" height="24" rx="4" fill="#b3261e"/><rect x="23" y="79" width="16" height="18" rx="2" fill="#f4ecd8"/><text x="31" y="93" text-anchor="middle" font-size="11" font-weight="900" fill="#6e130d">10</text></g>
@@ -65,6 +70,7 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'tower', name: 'Défense du Royaume', tag: 'Tower defense : protège ton château', cls: 'g-tower', badge: 'NOUVEAU' },
   { id: 'stratego', name: 'Guerre Éclair', tag: 'Stratégie : trouve le drapeau ennemi', cls: 'g-stratego', badge: 'NOUVEAU' },
   { id: 'math', name: 'Calcul mental', tag: 'Additions, soustractions, tables', cls: 'g-math', badge: 'NOUVEAU' },
   { id: 'dictee', name: 'Dictée', tag: 'Écoute le mot et écris-le', cls: 'g-dictee', badge: 'NOUVEAU' },
@@ -73,6 +79,7 @@ const GAMES = [
   { id: 'snake', name: 'Serpent', tag: 'Mange les billes, allonge ta queue, ne te mords pas !', cls: 'g-snake wide', badge: 'NOUVEAU' },
 ];
 const ARENA = {
+  tower: { cls: TowerDefense, name: 'Défense du Royaume', desc: '' },
   stratego: { cls: Stratego, name: 'Guerre Éclair', desc: "Règles du Stratego : 40 pièces cachées par camp. Déplace-toi d'une case, attaque pour révéler les pièces : la plus forte gagne. Capture le drapeau ennemi pour gagner. Attention aux bombes !" },
   chess: { cls: Chess, name: 'Échecs', desc: "Toutes les règles officielles : roque, prise en passant, promotion, échec et mat, pat. Touche une pièce pour voir ses coups possibles, puis touche la case d'arrivée." },
   snake: { cls: Snake, name: 'Serpent', desc: '' },
@@ -98,7 +105,7 @@ function show(id, push = true) {
   render[id]?.();
   if (id !== 'scr-intro') playSong(songFor(id));
   // tutoriel automatique à la première ouverture de chaque jeu
-  const g = { 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena, 'scr-tarot': 'tarot', 'scr-math': 'math', 'scr-dictee': 'dictee' }[id];
+  const g = { 'scr-tower': 'tower', 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena, 'scr-tarot': 'tarot', 'scr-math': 'math', 'scr-dictee': 'dictee' }[id];
   if (g && push && prof() && !prof().tuto?.[g]) setTimeout(() => openTutorial(g), 350);
 }
 function openTutorial(g, onDone) {
@@ -172,6 +179,7 @@ function gameStat(id) {
   if (id === 'minigolf') return `★ ${store.totalStars(p)} / ${totalGolfStars()}`;
   if (id === 'snake') { const st = Object.values(s?.levels || {}).reduce((a, r) => a + r.stars, 0); return `★ ${st} / ${SNAKE_LEVELS.length * 3} · record infini : ${s?.record || 0}`; }
   if (!s) return 'Pas encore joué';
+  if (id === 'tower') { const st = Object.values(p.stats?.tower || {}).reduce((a, b) => a + b, 0); return `★ ${st} / ${TD_LEVELS.length * 3}`; }
   if (id === 'math' || id === 'dictee') { const st = Object.values(p.stats?.[id] || {}).reduce((a, b) => a + b, 0); return `★ ${st} / ${id === 'math' ? 60 : 15}`; }
   if (id === 'tarot') { const t = store.getTarot(); return t && !t.finished ? `Partie en cours · ${t.rounds.length} manche(s)` : 'Compteur de points'; }
   if (id === 'pog') return `${s.pogs || 0} pogs gagnés · ${s.wins || 0} victoire${s.wins > 1 ? 's' : ''}`;
@@ -268,6 +276,13 @@ const render = {
     }).join('') + `<button class="lvl endless" data-i="endless"><div class="num">∞</div><div class="nm">Mode infini</div>
         <div class="best">La vitesse augmente à chaque bille · record : ${s.record || 0}</div></button>`;
   },
+  'scr-tower'() {
+    const st = prof().stats?.tower || {};
+    $('towerGrid').innerHTML = TD_LEVELS.map((L, k) => {
+      const locked = !expert() && k > 0 && !st[k - 1];
+      return `<button class="lvl ${locked ? 'locked' : ''}" data-i="${k}"><div class="num">${locked ? '🔒' : k + 1}</div><div class="nm">${L.name}</div><div class="stars">${starsHtml(st[k] || 0)}</div><div class="best">${L.waves} vagues${L.paths.length > 1 ? ' · 2 routes' : ''}</div></button>`;
+    }).join('');
+  },
   'scr-math'() {
     $('mathOps').innerHTML = Object.entries(OPS).map(([k, o]) => `<button data-op="${k}" class="${k === mathOp ? 'sel' : ''}"><b>${o.sign}</b> ${o.name}</button>`).join('');
     const st = prof().stats?.math || {};
@@ -346,6 +361,7 @@ $('gameGrid').onclick = (e) => {
   else if (id === 'snake') show('scr-snake');
   else if (id === 'tarot') { show('scr-tarot'); openTarot(); }
   else if (id === 'math') show('scr-math');
+  else if (id === 'tower') show('scr-tower');
   else if (id === 'dictee') show('scr-dictee');
   else { curArena = id; show('scr-mode'); }
 };
@@ -420,6 +436,23 @@ $('roomSeg').onclick = (e) => {
 };
 $('btnVsAI').onclick = () => { fx.tap(); startArena({ mode: 'ai', level: aiLevel }); };
 $('btnDuo').onclick = () => { fx.tap(); startArena({ mode: 'duo', level: aiLevel, p2: $('p2Name').value.trim() || 'Joueur 2' }); };
+
+// ---------- Tower defense ----------
+$('towerGrid').onclick = (e) => {
+  const b = e.target.closest('.lvl'); if (!b) return; if (b.classList.contains('locked')) return fx.lose();
+  fx.tap(); curArena = 'tower'; startArena({ mode: 'solo', level: +b.dataset.i });
+};
+function showTowerResult(r) {
+  const lv = arenaOpts.level;
+  if (r.won) store.recordLearn('tower', lv, r.stars);
+  $('resTitle').textContent = r.title; $('resText').textContent = r.text;
+  popStars(r.won ? r.stars : 0);
+  const next = r.won && lv + 1 < TD_LEVELS.length ? lv + 1 : null;
+  $('btnNext').style.display = next != null ? '' : 'none'; $('btnNext').textContent = 'Niveau suivant';
+  $('btnNext').onclick = () => { fx.tap(); startArena({ mode: 'solo', level: next }); };
+  $('btnRetry').textContent = r.won ? 'Rejouer' : 'Réessayer'; $('btnLevels').textContent = 'Liste des niveaux';
+  openModal('mdResult');
+}
 
 // ---------- Calcul mental & dictée ----------
 let mathOp = 'add', quizKind = null, quizLevel = 1, quiz = null;
@@ -629,6 +662,7 @@ function showSnakeResult(r) {
 
 function showArenaResult(r) {
   if (arenaOpts.game === 'snake') return showSnakeResult(r);
+  if (arenaOpts.game === 'tower') return showTowerResult(r);
   store.recordGame(arenaOpts.game, { mode: arenaOpts.mode, won: r.won, pogs: r.pogs });
   $('resTitle').textContent = r.title;
   $('resText').textContent = r.text;

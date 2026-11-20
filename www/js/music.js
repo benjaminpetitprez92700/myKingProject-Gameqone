@@ -55,6 +55,14 @@ export const SONGS = {
     bassPat: 'x...........', stab: { pat: '....x...x...', vol: 0.045, cutoff: 2200, type: 'square', detune: 14 },
     lead: { vol: 0.055, type: 'square', cutoff: 2600, detune: 16, trem: true, notes: [72, _, 76, _, 79, _, 77, _, 76, _, 74, _, 71, _, 74, _, 77, _, 76, _, 74, _, 72, _, 69, _, 72, _, 77, _, 76, _, 74, _, 72, _, 74, _, 71, _, 67, _, 72, _, _, _, _, _] },
   },
+  tower: {
+    // marche héroïque
+    bpm: 118, steps: 16, gain: 0.75, kit: 'big',
+    chords: [[50, 53, 57], [46, 50, 53], [48, 52, 55], [45, 49, 52]], bass: [38, 34, 36, 33],
+    bassPat: 'x..xx..xx..xx.x.', drums: { kick: 'x.....x.x.......', snare: '....x.......x.xx', hat: 'x.x.x.x.x.x.x.x.' },
+    pad: { vol: 0.035, cutoff: 1400 }, stab: { pat: 'x..x..x.....x...', vol: 0.03, cutoff: 1800, type: 'square' },
+    lead: { vol: 0.05, type: 'sawtooth', cutoff: 2600, detune: 5, notes: [62, _, 65, 69, _, 67, 65, 64, 62, _, _, 58, 62, _, 65, _, 64, _, 67, 72, _, 70, 69, 67, 69, _, _, 64, 61, _, 64, _] },
+  },
   chess: {
     // piano feutré, arpèges classiques
     bpm: 76, steps: 16, gain: 0.7, kit: 'none',

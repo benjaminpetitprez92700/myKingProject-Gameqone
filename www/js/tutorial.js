@@ -6,6 +6,20 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  tower: {
+    name: 'Défense du Royaume',
+    slides: [
+      { title: 'Le but', text: "Des ennemis avancent sur la route vers ton château. S'ils l'atteignent, tu perds des vies. Tiens toutes les vagues pour gagner !",
+        art: svg(`<rect width="240" height="160" fill="#5f9a3c"/><path d="M0 50 L150 50 L150 120 L240 120" stroke="#c9a46a" stroke-width="26" fill="none"/><g class="t-slither"><circle cx="60" cy="50" r="9" fill="#c0392b"/><circle cx="35" cy="50" r="8" fill="#f39c12"/></g><rect x="196" y="98" width="34" height="30" fill="#9aa0a8"/><path d="M196 98 L213 84 L230 98" fill="#c0392b"/>`) },
+      { title: 'Construire', text: "Touche une case d'herbe, puis choisis une tour. Chaque ennemi vaincu rapporte de l'or.",
+        art: svg(`<rect width="240" height="160" fill="#5f9a3c"/><rect x="96" y="50" width="48" height="48" fill="none" stroke="#ffd34d" stroke-width="3"/><circle cx="120" cy="74" r="18" fill="#a8a296"/><circle cx="120" cy="74" r="10" fill="#555c66"/>${finger('t-tap')}`) },
+      { title: 'Les 4 tours', text: "Archers : rapides. Canon : dégâts de zone mais ne touche pas les chauves-souris. Givre : ralentit. Éclair : frappe plusieurs ennemis à la fois.",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/>${[['#8b5a2b','Arc'],['#555c66','Canon'],['#4fb3e8','Givre'],['#a35cff','Éclair']].map(([c,n],i)=>`<circle cx="${40+i*54}" cy="70" r="20" fill="#a8a296"/><circle cx="${40+i*54}" cy="70" r="11" fill="${c}"/><text x="${40+i*54}" y="112" class="t-lbl">${n}</text>`).join('')}`) },
+      { title: 'Améliorer', text: "Touche une tour pour l'améliorer (3 niveaux) ou la vendre. Puis lance la vague suivante quand tu es prêt. ⏩ accélère le jeu.",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><circle cx="120" cy="70" r="26" fill="#a8a296"/><circle cx="120" cy="70" r="14" fill="#8b5a2b"/>${[0,1,2].map(i=>`<circle cx="${104+i*16}" cy="110" r="6" fill="#ffd34d"/>`).join('')}<text x="120" y="148" class="t-lbl">niveau 3</text>`) },
+    ],
+  },
+
   stratego: {
     name: 'Guerre Éclair',
     slides: [
