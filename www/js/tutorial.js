@@ -6,6 +6,20 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  island: {
+    name: 'Archipel du Roi',
+    slides: [
+      { title: 'Le but', text: "Sois le premier à gagner 10 couronnes 👑 en construisant sur l'île. Hutte = 1 couronne, Fort = 2, Phare = +1.",
+        art: svg(`<rect width="240" height="160" fill="#0b3a66"/>${[[90,60,'#3f8f3a','🌲'],[150,60,'#9b9488','🪨'],[120,108,'#e8c552','🌾']].map(([x,y,c,e])=>`<polygon points="${[0,1,2,3,4,5].map(i=>{const a=Math.PI/180*(60*i-30);return `${x+Math.cos(a)*32},${y+Math.sin(a)*32}`}).join(' ')}" fill="${c}" stroke="#e9d39a" stroke-width="3"/><text x="${x}" y="${y+8}" text-anchor="middle" font-size="22">${e}</text>`).join('')}<path d="M112 92 L112 80 L120 72 L128 80 L128 92 Z" fill="#3a86ff" stroke="#111" stroke-width="2"/>`) },
+      { title: 'Le dé', text: "À ton tour, lance le dé. Chaque île qui porte ce numéro donne sa ressource aux huttes posées sur ses coins (2 pour un fort).",
+        art: svg(`<rect width="240" height="160" fill="#0b3a66"/><rect x="40" y="50" width="56" height="56" rx="10" fill="#fff"/>${[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]].map(([a,b])=>`<circle cx="${68+a*15}" cy="${78+b*15}" r="5" fill="#111"/>`).join('')}<circle cx="168" cy="78" r="26" fill="#fff8e1" stroke="#3a2600" stroke-width="2"/><text x="168" y="88" text-anchor="middle" font-size="26" font-weight="900" fill="#d62828">5</text><text x="120" y="140" class="t-lbl">+1 🌲</text>`) },
+      { title: 'Construire', text: "Chemin : 🌲🪨. Hutte : 🌲🌾🐟 (au bout de tes chemins, jamais collée à une autre hutte). Fort : 🪨🪨🌾🌾 (améliore une hutte). Phare : 🐟🐟🪨🌲 sur une hutte au bord de la mer, il t'offre 1 🐟 à chaque tour.",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/>${[['🛤️','Chemin'],['🛖','Hutte'],['🏰','Fort'],['🗼','Phare']].map(([e,n],i)=>`<text x="${36+i*56}" y="82" text-anchor="middle" font-size="30">${e}</text><text x="${36+i*56}" y="118" class="t-lbl">${n}</text>`).join('')}`) },
+      { title: 'Volcan et échanges', text: "Si le dé montre le 🌋 : éruption ! Pose le nuage de cendres sur une île : elle ne produit plus, et tu voles 1 ressource à un adversaire installé dessus. Échange 4 ressources contre 1, ou 2 contre 1 avec un port.",
+        art: svg(`<rect width="240" height="160" fill="#3a1d14"/><text x="120" y="80" text-anchor="middle" font-size="50">🌋</text><text x="120" y="130" class="t-lbl">éruption !</text>`) },
+    ],
+  },
+
   rami: {
     name: 'Rami à Contrats',
     slides: [

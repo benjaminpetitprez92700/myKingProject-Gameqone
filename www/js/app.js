@@ -11,6 +11,7 @@ import { mountTarot } from './tarot/ui.js';
 import { Stratego } from './stratego/game.js';
 import { CardGolf } from './cards/golf.js';
 import { Rami } from './cards/rami.js';
+import { Island } from './island/game.js';
 import { TowerDefense, TD_LEVELS } from './tower/game.js';
 import { OPS, MATH_LEVELS, DICTEE_LEVELS, runQuiz, speak } from './learn/quiz.js';
 import { playIntro } from './intro.js';
@@ -24,6 +25,7 @@ const starsHtml = (n, total = 3) => Array.from({ length: total }, (_, i) => `<i 
 
 // ---------- Illustrations des cartes ----------
 const ART = {
+  island: `<svg viewBox="0 0 120 120"><rect width="120" height="120" fill="#0b3a66"/>${[[60,38,'#3f8f3a','🌲'],[40,72,'#e8c552','🌾'],[80,72,'#9b9488','🪨'],[60,96,'#3fb6c9','🐟']].map(([x,y,c,e])=>`<polygon points="${[0,1,2,3,4,5].map(i=>{const a=Math.PI/180*(60*i-30);return `${x+Math.cos(a)*21},${y+Math.sin(a)*21}`}).join(' ')}" fill="${c}" stroke="#e9d39a" stroke-width="3"/><text x="${x}" y="${y+6}" text-anchor="middle" font-size="16">${e}</text>`).join('')}<g class="bob"><path d="M54 52 L54 44 L60 38 L66 44 L66 52 Z" fill="#ffd34d" stroke="#111" stroke-width="1.5"/></g></svg>`,
   rami: `<svg viewBox="0 0 120 120">${[['7','♥',-24],['7','♠',-8],['7','♦',8],['🃏','',24]].map(([r,s,a],i)=>`<g transform="rotate(${a} 60 100)"><rect x="44" y="26" width="32" height="46" rx="4" fill="#fff" stroke="#222" stroke-width="1.5"/><text x="60" y="${s?52:56}" text-anchor="middle" font-size="${s?15:18}" font-weight="900" fill="${s==='♠'?'#111':'#c1121f'}">${r}</text><text x="60" y="66" text-anchor="middle" font-size="11" fill="${s==='♠'?'#111':'#c1121f'}">${s}</text></g>`).join('')}<g class="bob"><rect x="30" y="84" width="60" height="22" rx="11" fill="#ffd34d"/><text x="60" y="99" text-anchor="middle" font-size="11" font-weight="900" fill="#3a2600">CONTRAT</text></g></svg>`,
   golfcards: `<svg viewBox="0 0 120 120">${[0,1,2,3].map(c=>[0,1].map(r=>`<rect x="${14+c*24}" y="${30+r*34}" width="20" height="30" rx="3" fill="${(c+r)%3? '#5b2a86':'#fff'}" stroke="#222" stroke-width="1.5"/>${(c+r)%3? `<text x="${24+c*24}" y="${49+r*34}" text-anchor="middle" font-size="12" fill="#ffd34d">♛</text>` : `<text x="${24+c*24}" y="${50+r*34}" text-anchor="middle" font-size="13" font-weight="900" fill="#c1121f">${['7','R','2','A'][c]}</text>`}`).join('')).join('')}<g class="bob"><rect x="44" y="4" width="26" height="22" rx="4" fill="#ffd34d"/><text x="57" y="20" text-anchor="middle" font-size="12" font-weight="900" fill="#3a2600">-2</text></g></svg>`,
   tower: `<svg viewBox="0 0 120 120"><rect x="6" y="10" width="108" height="100" rx="12" fill="#5f9a3c"/><path d="M14 30 L70 30 L70 70 L104 70" stroke="#7a5a35" stroke-width="16" fill="none" stroke-linejoin="round"/><path d="M14 30 L70 30 L70 70 L104 70" stroke="#c9a46a" stroke-width="12" fill="none" stroke-linejoin="round"/>
@@ -74,6 +76,7 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'island', name: 'Archipel du Roi', tag: 'Colonise l\'île : huttes, forts et phares', cls: 'g-island', badge: 'NOUVEAU' },
   { id: 'rami', name: 'Rami à Contrats', tag: 'Brelans, suites et 6 contrats', cls: 'g-rami', badge: 'NOUVEAU' },
   { id: 'golfcards', name: 'Cartes Cachées', tag: 'Le moins de points gagne (Golf)', cls: 'g-golfcards', badge: 'NOUVEAU' },
   { id: 'tower', name: 'Défense du Royaume', tag: 'Tower defense : protège ton château', cls: 'g-tower', badge: 'NOUVEAU' },
@@ -85,6 +88,7 @@ const GAMES = [
   { id: 'snake', name: 'Serpent', tag: 'Mange les billes, allonge ta queue, ne te mords pas !', cls: 'g-snake wide', badge: 'NOUVEAU' },
 ];
 const ARENA = {
+  island: { cls: Island, name: 'Archipel du Roi', desc: "Jeu de colons original : lance le dé, récolte bois, pierre, blé et poisson sur les îles, construis chemins, huttes, forts et phares. Attention au volcan ! Le premier à 10 couronnes gagne." },
   rami: { cls: Rami, name: 'Rami à Contrats', desc: "Rami traditionnel en 6 manches : à chaque manche, un contrat à poser (brelans, suites de 4). Ensuite, complète les combinaisons sur la table et vide ta main en premier ! Le moins de points gagne." },
   golfcards: { cls: CardGolf, name: 'Cartes Cachées', desc: "Le Golf, jeu de cartes traditionnel : chacun a 8 cartes cachées. Pioche, échange et retourne tes cartes pour avoir le moins de points. Deux cartes identiques l'une au-dessus de l'autre valent 0 ! 6 manches." },
   tower: { cls: TowerDefense, name: 'Défense du Royaume', desc: '' },
@@ -102,7 +106,7 @@ let stack = [];
 function songFor(id) {
   if (id === 'scr-intro') return null;
   if (id === 'scr-game') return 'golf';
-  if (id === 'scr-arena') return curArena === 'chess' ? 'chess' : (curArena === 'golfcards' || curArena === 'rami') ? 'billard' : curArena;
+  if (id === 'scr-arena') return curArena === 'chess' ? 'chess' : (curArena === 'golfcards' || curArena === 'rami') ? 'billard' : curArena === 'island' ? 'golf' : curArena;
   if (id === 'scr-tarot') return 'billard';
   if (id === 'scr-quiz') return quizKind === 'dictee' ? null : 'golf';
   return 'menu';

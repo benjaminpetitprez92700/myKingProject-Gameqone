@@ -669,3 +669,11 @@ h1, h2 { margin: 0; }
 .rbtn.orange { background: linear-gradient(180deg, #ff9a6b, #d4552a); box-shadow: 0 4px 0 #7a2a10; }
 .rbtn:disabled { opacity: .4; }
 .rbtn:active { transform: translateY(3px); box-shadow: none; }
+
+/* ---------- Archipel du Roi ---------- */
+.g-island { background: linear-gradient(150deg, #1fa2c9, #0b3a66); }
+.il-ctl { display: flex; flex-direction: column; gap: 7px; }
+.il-res { display: flex; justify-content: space-around; background: rgba(0,0,0,.45); border-radius: 12px; padding: 5px 4px; }
+.il-res span { display: flex; align-items: center; gap: 4px; font-size: 1.05rem; } .il-res i { font-style: normal; font-size: 1.25rem; } .il-res b { color: #ffd34d; min-width: 14px; }
+.il-tip, .il-wait { background: rgba(0,0,0,.5); border-radius: 12px; padding: 10px; text-align: center; font-weight: 800; color: #ffd34d; }
+.rbtn small { font-size: .62rem; letter-spacing: -1px; opacity: .9; }
