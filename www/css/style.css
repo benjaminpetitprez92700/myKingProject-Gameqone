@@ -677,3 +677,14 @@ h1, h2 { margin: 0; }
 .il-res span { display: flex; align-items: center; gap: 4px; font-size: 1.05rem; } .il-res i { font-style: normal; font-size: 1.25rem; } .il-res b { color: #ffd34d; min-width: 14px; }
 .il-tip, .il-wait { background: rgba(0,0,0,.5); border-radius: 12px; padding: 10px; text-align: center; font-weight: 800; color: #ffd34d; }
 .rbtn small { font-size: .62rem; letter-spacing: -1px; opacity: .9; }
+
+/* Cartes Cachées : plusieurs adversaires */
+.pcard.xxs { width: 22px; height: 31px; font-size: 7px; border-radius: 4px; }
+.pcard.xxs .pc-front, .pcard.xxs .pc-back { border-radius: 4px; } .pcard.xxs .pc-back { font-size: 1.3em; border-width: 1px; }
+.pcard.xxs .pc-corner.br, .pcard.xs .pc-corner.br { display: none; }
+.pcard.xxs .pc-mid { font-size: 1.6em; top: 30%; }
+.cg-opps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; }
+.cg-opp { background: rgba(0,0,0,.18); border-radius: 12px; padding: 3px 4px; border: 2px solid transparent; text-align: center; }
+.cg-opp.on { border-color: #ffd34d; box-shadow: 0 0 12px rgba(255,211,77,.4); }
+.cg-opp .cg-grid { gap: 3px; padding: 2px; }
+.cg-opp .cg-who { font-size: .72rem; }
