@@ -12,6 +12,7 @@ import { Stratego } from './stratego/game.js';
 import { CardGolf } from './cards/golf.js';
 import { Rami } from './cards/rami.js';
 import { Island } from './island/game.js';
+import { HUB_ART } from './hubart.js';
 import { TowerDefense, TD_LEVELS } from './tower/game.js';
 import { OPS, MATH_LEVELS, DICTEE_LEVELS, runQuiz, speak } from './learn/quiz.js';
 import { playIntro } from './intro.js';
@@ -70,6 +71,8 @@ const ART = {
     <ellipse cx="60" cy="96" rx="52" ry="12" fill="rgba(0,0,0,.18)"/><circle cx="62" cy="78" r="6" fill="#ff9f1c"/>
     <circle cx="38" cy="74" r="17" fill="url(#st)" class="bob"/><circle cx="86" cy="70" r="17" fill="url(#br)"/><circle cx="70" cy="34" r="15" fill="url(#st)" class="drop"/></svg>`,
 };
+
+for (const [k, f] of Object.entries(HUB_ART)) ART[k] = f();
 
 const GAMES = [
   { id: 'minigolf', name: 'Mini Golf', tag: '15 parcours · ponts, bosses, moulins', cls: 'g-golf' },
