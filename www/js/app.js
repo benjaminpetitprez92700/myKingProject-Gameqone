@@ -7,6 +7,7 @@ import { Petanque } from './petanque/game.js';
 import { Pog } from './pog/game.js';
 import { Snake, SNAKE_LEVELS } from './snake/game.js';
 import { playIntro } from './intro.js';
+import { showTutorial } from './tutorial.js';
 import { playSong, setMusicOn, isMusicOn } from './music.js';
 import { fx, setPrefs, unlockAudio, audio } from './fx.js';
 
@@ -68,7 +69,21 @@ function show(id, push = true) {
   if (push) stack.push(id);
   render[id]?.();
   if (id !== 'scr-intro') playSong(songFor(id));
+  // tutoriel automatique à la première ouverture de chaque jeu
+  const g = { 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena }[id];
+  if (g && push && prof() && !prof().tuto?.[g]) setTimeout(() => openTutorial(g), 350);
 }
+function openTutorial(g, onDone) {
+  showTutorial(g, () => {
+    const p = prof();
+    if (p) store.updateProfile(p.id, { tuto: { ...(p.tuto || {}), [g]: true } });
+    onDone?.();
+  });
+}
+document.addEventListener('click', (e) => {
+  const h = e.target.closest('[data-help]'); if (!h) return;
+  fx.tap(); openTutorial(h.dataset.help === 'mode' ? curArena : h.dataset.help);
+});
 function musicButtons() {
   const on = isMusicOn();
   $('btnMusic').textContent = on ? '🎵' : '🔇';
@@ -81,8 +96,9 @@ function toggleMusic(on = !isMusicOn()) {
   musicButtons();
 }
 function back() {
-  const m = document.querySelector('.modal.show');
+  const m = document.querySelector('.modal.tuto.show') || document.querySelector('.modal.show');
   if (m) {
+    if (m.id === 'mdTuto') { m.querySelector('[data-t="skip"]').click(); return true; }
     if (m.id === 'mdPause') resume();
     else if (m.id === 'mdConfirm') closeModal('mdConfirm');
     return true;
@@ -424,6 +440,7 @@ function quitGame() {
 
 $('btnPause').onclick = () => { fx.tap(); pause(); };
 $('btnPause2').onclick = () => { fx.tap(); pause(); };
+$('btnHelpPause').onclick = () => { fx.tap(); openTutorial(active === 'golf' ? 'minigolf' : curArena); };
 $('btnResume').onclick = () => { fx.tap(); resume(); };
 $('btnRestart').onclick = () => { fx.tap(); if (active === 'golf') startLevel(curLevel); else startArena(arenaOpts); };
 $('btnQuit').onclick = () => { fx.tap(); quitGame(); };

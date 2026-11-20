@@ -57,7 +57,7 @@
 
 <!-- Mini golf : difficultés -->
 <section class="screen" id="scr-diff">
-  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Mini Golf</h2><span></span></header>
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Mini Golf</h2><button class="icon-btn help" data-help="minigolf" aria-label="Comment jouer">?</button></header>
   <p class="muted small center">Mets la balle dans le trou en un minimum de coups. Attention aux ponts, aux bosses et aux obstacles !</p>
   <div class="diff-list" id="diffList"></div>
 </section>
@@ -70,7 +70,7 @@
 
 <!-- Serpent : niveaux -->
 <section class="screen" id="scr-snake">
-  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Serpent</h2><span></span></header>
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Serpent</h2><button class="icon-btn help" data-help="snake" aria-label="Comment jouer">?</button></header>
   <p class="muted small center">Mange les billes : elles s'ajoutent à ta queue. Ne touche ni le cadre, ni les murs, ni ton propre corps !</p>
   <div class="mode-card ctl-card"><h3>Contrôles</h3>
     <div class="seg" id="snakeCtl"><button data-c="swipe">👆 Glisser le doigt</button><button data-c="dpad">🎮 Croix (manette)</button></div>
@@ -81,7 +81,7 @@
 
 <!-- Choix du mode (billard, pétanque, pogs) -->
 <section class="screen" id="scr-mode">
-  <header class="bar"><button class="icon-btn" data-back>‹</button><h2 id="modeTitle"></h2><span></span></header>
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2 id="modeTitle"></h2><button class="icon-btn help" data-help="mode" aria-label="Comment jouer">?</button></header>
   <div class="center-col">
     <div class="mode-art" id="modeArt"></div>
     <p class="muted small" id="modeDesc"></p>
@@ -152,6 +152,7 @@
   <div class="card">
     <h2>Pause</h2>
     <button class="btn primary" id="btnResume">Reprendre</button>
+    <button class="btn ghost" id="btnHelpPause">❓ Comment jouer</button>
     <button class="btn ghost" id="btnMusicPause">🎵 Couper la musique</button>
     <button class="btn ghost" id="btnRestart">Recommencer</button>
     <button class="btn ghost" id="btnQuit">Quitter</button>
@@ -166,6 +167,17 @@
     <button class="btn primary" id="btnNext">Niveau suivant</button>
     <button class="btn ghost" id="btnRetry">Rejouer</button>
     <button class="btn ghost" id="btnLevels">Liste des niveaux</button>
+  </div>
+</div>
+
+<div class="modal tuto" id="mdTuto">
+  <div class="card">
+    <div class="tuto-head"><span class="tuto-game"></span><button class="tuto-skip" data-t="skip">Passer</button></div>
+    <div class="tuto-art"></div>
+    <h2 class="tuto-title"></h2>
+    <p class="tuto-text"></p>
+    <div class="tuto-dots"></div>
+    <div class="tuto-nav"><button class="btn ghost" data-t="prev">Précédent</button><button class="btn primary" data-t="next">Suivant</button></div>
   </div>
 </div>
 
