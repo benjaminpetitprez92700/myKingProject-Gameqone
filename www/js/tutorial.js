@@ -6,6 +6,20 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  rami: {
+    name: 'Rami à Contrats',
+    slides: [
+      { title: 'Le but', text: "6 manches, chacune avec un CONTRAT à poser : par exemple « 2 brelans » ou « 1 brelan + 1 suite de 4 ». Le premier qui vide sa main gagne la manche.",
+        art: svg(`<rect width="240" height="160" fill="#7a2338"/><rect x="50" y="50" width="140" height="56" rx="12" fill="rgba(0,0,0,.4)" stroke="#ffd34d" stroke-width="3"/><text x="120" y="74" text-anchor="middle" font-size="11" fill="#f5dbe3">Contrat de la manche</text><text x="120" y="94" text-anchor="middle" font-size="15" font-weight="900" fill="#ffd34d">2 brelans</text>`) },
+      { title: 'Brelans et suites', text: "Brelan : 3 cartes (ou plus) de même valeur. Suite : 4 cartes (ou plus) qui se suivent dans la même couleur. Le Joker remplace n'importe quelle carte.",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/>${[['7','♥'],['7','♠'],['7','♦']].map(([r,c],i)=>`<rect x="${14+i*30}" y="40" width="26" height="38" rx="3" fill="#fff"/><text x="${27+i*30}" y="64" text-anchor="middle" font-size="13" font-weight="900" fill="${c==='♠'?'#111':'#c1121f'}">${r}${c}</text>`).join('')}${[['4'],['5'],['🃏'],['7']].map(([r],i)=>`<rect x="${120+i*28}" y="40" width="26" height="38" rx="3" fill="#fff"/><text x="${133+i*28}" y="64" text-anchor="middle" font-size="12" font-weight="900" fill="#111">${r}${r==='🃏'?'':'♣'}</text>`).join('')}<text x="56" y="108" class="t-lbl">brelan</text><text x="176" y="108" class="t-lbl">suite</text>`) },
+      { title: 'À ton tour', text: "1) Pioche ou prends la défausse. 2) Sélectionne des cartes et touche « Grouper » pour préparer le contrat, puis « Poser le contrat ». 3) Défausse-toi d'une carte.",
+        art: svg(`<rect width="240" height="160" fill="#7a2338"/>${[0,1,2,3,4].map(i=>`<rect x="${40+i*34}" y="${i===1||i===2?50:62}" width="30" height="44" rx="4" fill="#fff" stroke="${i===1||i===2?'#ffd34d':'#222'}" stroke-width="${i===1||i===2?3:1}"/>`).join('')}${finger('t-tap')}`) },
+      { title: 'Compléter et finir', text: "Après avoir posé ton contrat, tu peux ajouter tes cartes sur N'IMPORTE QUELLE combinaison de la table. Vide ta main ! Les cartes restantes coûtent des points : 2 à 9 = 5, 10 à Roi = 10, As = 15, Joker = 25.",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="70" text-anchor="middle" font-size="34" fill="#ffd34d" font-weight="900">0 carte</text><text x="120" y="110" class="t-lbl">= manche gagnée !</text>`) },
+    ],
+  },
+
   golfcards: {
     name: 'Cartes Cachées',
     slides: [
