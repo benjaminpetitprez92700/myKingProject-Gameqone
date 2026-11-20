@@ -53,7 +53,8 @@ export class Snake {
     this.opts = opts;
     this.endless = opts.level === 'endless';
     this.lv = this.endless ? { name: 'Infini', speed: 6, goal: Infinity, walls: [] } : SNAKE_LEVELS[opts.level];
-    this.speed = this.lv.speed;
+    this.mul = opts.speedMul || 1;            // réglage de vitesse choisi par le joueur
+    this.speed = this.lv.speed * this.mul;
     this.blocked = new Set();
     for (const w of this.lv.walls) for (let x = w.x; x < w.x + w.w; x++) for (let y = w.y; y < w.y + w.h; y++) this.blocked.add(x + ',' + y);
     const c = Math.floor(COLS / 2);
@@ -187,7 +188,7 @@ export class Snake {
     }
     this.particles.push({ x: cx, y: cy, vx: 0, vy: 0, life: 0.45, c: color, ring: true });
     this.texts.push({ x: cx, y: cy - 10, s: gold ? '+3' : '+1', life: 0.9, c: gold ? '#ffd34d' : '#fff' });
-    if (this.endless) this.speed = Math.min(15, 6 + this.score * 0.22);
+    if (this.endless) this.speed = Math.min(15, 6 + this.score * 0.22) * this.mul;
     if (!gold && !this.gold && this.sinceGold >= 6 && Math.random() < 0.5) { this.sinceGold = 0; this._spawn(true); }
     this._hud(true);
     if (!this.endless && this.eaten >= this.lv.goal) this._win();
@@ -213,12 +214,14 @@ export class Snake {
   _win() {
     this.phase = 'won';
     fx.win();
-    const stars = snakeStars(this.lv, this.time);
+    // plus lent = plus de temps accordé pour les étoiles
+    const par = Math.round(parTime(this.lv) / this.mul);
+    const stars = this.time <= par ? 3 : this.time <= par * 1.5 ? 2 : 1;
     for (let i = 0; i < 60; i++) {
       const a = Math.random() * Math.PI * 2, v = 80 + Math.random() * 260;
       this.particles.push({ x: this.vw / 2, y: this.vh / 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1.2, c: COLORS[i % COLORS.length], s: 3 });
     }
-    setTimeout(() => this.running && this.hud.end({ won: true, stars, time: this.time, title: stars === 3 ? 'Parfait !' : 'Niveau réussi !', text: `${this.lv.goal} billes en ${this.time.toFixed(1)} s (objectif 3 étoiles : ${parTime(this.lv)} s).` }), 1200);
+    setTimeout(() => this.running && this.hud.end({ won: true, stars, time: this.time, title: stars === 3 ? 'Parfait !' : 'Niveau réussi !', text: `${this.lv.goal} billes en ${this.time.toFixed(1)} s (objectif 3 étoiles : ${par} s).` }), 1200);
   }
 
   // ---------- Boucle ----------

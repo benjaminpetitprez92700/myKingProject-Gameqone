@@ -7,7 +7,8 @@ import { Petanque } from './petanque/game.js';
 import { Pog } from './pog/game.js';
 import { Snake, SNAKE_LEVELS } from './snake/game.js';
 import { playIntro } from './intro.js';
-import { fx, setPrefs, unlockAudio } from './fx.js';
+import { playSong, setMusicOn, isMusicOn } from './music.js';
+import { fx, setPrefs, unlockAudio, audio } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -55,10 +56,29 @@ const ARENA = {
 
 // ---------- Navigation ----------
 let stack = [];
+// musique selon l'écran affiché
+function songFor(id) {
+  if (id === 'scr-intro') return null;
+  if (id === 'scr-game') return 'golf';
+  if (id === 'scr-arena') return curArena;
+  return 'menu';
+}
 function show(id, push = true) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
   if (push) stack.push(id);
   render[id]?.();
+  if (id !== 'scr-intro') playSong(songFor(id));
+}
+function musicButtons() {
+  const on = isMusicOn();
+  $('btnMusic').textContent = on ? '🎵' : '🔇';
+  $('btnMusicPause').textContent = on ? '🎵 Couper la musique' : '🔇 Remettre la musique';
+}
+function toggleMusic(on = !isMusicOn()) {
+  const p = prof();
+  if (p) store.updateProfile(p.id, { settings: { ...p.settings, music: on } });
+  setMusicOn(on, songFor(stack[stack.length - 1]));
+  musicButtons();
 }
 function back() {
   const m = document.querySelector('.modal.show');
@@ -185,13 +205,15 @@ const render = {
     const s = prof().stats?.snake || { levels: {}, record: 0 };
     const ctl = prof().settings.snakeCtl === 'dpad' ? 'dpad' : 'swipe';
     $('snakeCtl').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.c === ctl));
+    const sp = String(prof().settings.snakeSpeed || 1);
+    $('snakeSpeed').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === sp));
     const firstOpen = SNAKE_LEVELS.findIndex((_, i) => !s.levels[i]);
     $('snakeGrid').innerHTML = SNAKE_LEVELS.map((lv, i) => {
       const r = s.levels[i], locked = i > 0 && !s.levels[i - 1];
       return `<button class="lvl ${locked ? 'locked' : ''} ${i === firstOpen ? 'next' : ''}" data-i="${i}">
         <div class="num">${locked ? '🔒' : i + 1}</div><div class="nm">${lv.name}</div>
         <div class="stars">${starsHtml(r?.stars || 0)}</div>
-        <div class="best">${r ? `Record : ${r.best.toFixed(1)} s` : `${lv.goal} billes · vitesse ${lv.speed}`}</div></button>`;
+        <div class="best">${r ? `Record : ${r.best.toFixed(1)} s` : `${lv.goal} billes · vitesse ${+(lv.speed * (prof().settings.snakeSpeed || 1)).toFixed(1)}`}</div></button>`;
     }).join('') + `<button class="lvl endless" data-i="endless"><div class="num">∞</div><div class="nm">Mode infini</div>
         <div class="best">La vitesse augmente à chaque bille · record : ${s.record || 0}</div></button>`;
   },
@@ -208,6 +230,7 @@ const render = {
   'scr-settings'() {
     const p = prof();
     $('setSound').checked = p.settings.sound;
+    $('setMusic').checked = p.settings.music !== false;
     $('setHaptics').checked = p.settings.haptics;
     swatches($('setSwatches'), p.color, (c) => store.updateProfile(p.id, { color: c }));
   },
@@ -254,7 +277,15 @@ $('gameGrid').onclick = (e) => {
 };
 
 // Réglages
-function applyPrefs() { const p = prof(); if (p) setPrefs(p.settings); }
+function applyPrefs() {
+  const p = prof(); if (!p) return;
+  setPrefs(p.settings);
+  setMusicOn(p.settings.music !== false, stack.length ? songFor(stack[stack.length - 1]) : null);
+  musicButtons();
+}
+$('setMusic').onchange = (e) => { fx.tap(); toggleMusic(e.target.checked); };
+$('btnMusic').onclick = () => { fx.tap(); toggleMusic(); };
+$('btnMusicPause').onclick = () => { fx.tap(); toggleMusic(); };
 $('setSound').onchange = (e) => { const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, sound: e.target.checked } }); applyPrefs(); fx.tap(); };
 $('setHaptics').onchange = (e) => { const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, haptics: e.target.checked } }); applyPrefs(); fx.tap(); };
 $('btnResetProgress').onclick = () => confirmBox('Tout recommencer ?', 'Les étoiles, records et victoires de ce profil seront effacés.', 'Remettre à zéro', () => store.resetProgress(prof().id));
@@ -279,6 +310,11 @@ $('levelGrid').onclick = (e) => {
 };
 
 // Serpent
+$('snakeSpeed').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return; fx.tap();
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, snakeSpeed: +b.dataset.s } });
+  render['scr-snake']();
+};
 $('snakeCtl').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return; fx.tap();
   const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, snakeCtl: b.dataset.c } });
@@ -288,7 +324,7 @@ $('snakeGrid').onclick = (e) => {
   const b = e.target.closest('.lvl'); if (!b) return;
   if (b.classList.contains('locked')) { fx.lose(); return; }
   fx.tap(); curArena = 'snake';
-  startArena({ mode: 'solo', dpad: prof().settings.snakeCtl === 'dpad', level: b.dataset.i === 'endless' ? 'endless' : +b.dataset.i });
+  startArena({ mode: 'solo', dpad: prof().settings.snakeCtl === 'dpad', speedMul: prof().settings.snakeSpeed || 1, level: b.dataset.i === 'endless' ? 'endless' : +b.dataset.i });
 };
 
 // Mode (billard / pétanque / pogs)
@@ -441,7 +477,7 @@ function showSnakeResult(r) {
   const next = !r.endless && r.won && lv + 1 < SNAKE_LEVELS.length ? lv + 1 : null;
   $('btnNext').style.display = next != null ? '' : 'none';
   $('btnNext').textContent = 'Niveau suivant';
-  $('btnNext').onclick = () => { fx.tap(); startArena({ mode: 'solo', dpad: prof().settings.snakeCtl === 'dpad', level: next }); };
+  $('btnNext').onclick = () => { fx.tap(); startArena({ mode: 'solo', dpad: prof().settings.snakeCtl === 'dpad', speedMul: prof().settings.snakeSpeed || 1, level: next }); };
   $('btnRetry').textContent = r.won ? 'Rejouer' : 'Réessayer';
   $('btnLevels').textContent = 'Liste des niveaux';
   openModal('mdResult');
@@ -462,8 +498,10 @@ function showArenaResult(r) {
 $('btnRetry').onclick = () => { fx.tap(); if (active === 'golf') startLevel(curLevel); else startArena(arenaOpts); };
 $('btnLevels').onclick = () => { fx.tap(); quitGame(); };
 
-// Pause automatique quand l'appli passe en arrière-plan
+// Pause automatique quand l'appli passe en arrière-plan (et plus aucun son)
 document.addEventListener('visibilitychange', () => {
+  const a = audio();
+  if (a?.ctx) { if (document.hidden) a.ctx.suspend(); else a.ctx.resume(); }
   const cur = stack[stack.length - 1];
   if (document.hidden && (cur === 'scr-game' || cur === 'scr-arena') && !$('mdResult').classList.contains('show')) pause();
 });
