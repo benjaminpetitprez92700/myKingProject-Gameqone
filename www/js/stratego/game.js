@@ -2,6 +2,7 @@
 // où l'on se passe le téléphone (les pièces adverses restent cachées).
 import { SIZE, PIECES, BY_ID, isLake, movable, fight, autoSetup, newBoard, movesFrom, allMoves } from './rules.js';
 import { fx } from '../fx.js';
+import { portrait } from './art.js';
 
 const ARMY = [{ main: '#b3261e', dark: '#6e130d', light: '#e8574d' }, { main: '#1f4e9e', dark: '#0f2a5a', light: '#4f86d9' }];
 const VALUE = { marechal: 10, general: 9, colonel: 8, commandant: 7, capitaine: 6, lieutenant: 5, sergent: 4, demineur: 4.5, eclaireur: 2.5, espion: 6, bombe: 3, drapeau: 1000 };
@@ -287,14 +288,22 @@ export class Stratego {
     g.fillStyle = gr; g.beginPath(); g.roundRect(-s / 2, -s / 2, s, s, s * 0.16); g.fill();
     if (glow) { g.strokeStyle = '#ffd34d'; g.lineWidth = 3; g.stroke(); }
     if (faceUp) {
-      g.fillStyle = '#f4ecd8'; g.beginPath(); g.roundRect(-s * 0.4, -s * 0.4, s * 0.8, s * 0.8, s * 0.1); g.fill();
-      this._icon(g, p.id, s * 0.9, A.dark);
+      // portrait illustré du personnage
+      const px = Math.max(32, Math.round(s * 0.86 * this.dpr));
+      g.save(); g.beginPath(); g.roundRect(-s * 0.43, -s * 0.43, s * 0.86, s * 0.86, s * 0.1); g.clip();
+      g.drawImage(portrait(p.id, { ...A, side: p.side }, px), -s * 0.43, -s * 0.43, s * 0.86, s * 0.86);
+      // bandeau du nom
+      g.fillStyle = 'rgba(0,0,0,0.62)'; g.fillRect(-s * 0.43, s * 0.2, s * 0.86, s * 0.23);
+      g.restore();
       const P = BY_ID[p.id];
-      g.fillStyle = A.dark; g.font = `900 ${s * 0.24}px system-ui`; g.textAlign = 'left'; g.textBaseline = 'top';
-      if (P.r >= 1 && P.r <= 10) g.fillText(String(P.r), -s * 0.37, -s * 0.39);
-      g.font = `800 ${s * 0.16}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'bottom';
-      g.fillText(P.short, 0, s * 0.4);
-      if (p.revealed && p.side === this.viewer && !this.over) { g.fillStyle = '#ffd34d'; g.beginPath(); g.arc(s * 0.36, -s * 0.36, s * 0.09, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = '#fff'; g.font = `800 ${Math.max(7, s * 0.16)}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(s > 70 ? P.name : P.short, 0, s * 0.315);
+      if (P.r >= 1 && P.r <= 10) {
+        g.fillStyle = '#ffd34d'; g.beginPath(); g.arc(-s * 0.32, -s * 0.32, s * 0.15, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = A.dark; g.lineWidth = Math.max(1, s * 0.03); g.stroke();
+        g.fillStyle = A.dark; g.font = `900 ${s * 0.17}px system-ui`; g.fillText(String(P.r), -s * 0.32, -s * 0.315);
+      }
+      if (p.revealed && p.side === this.viewer && !this.over) { g.fillStyle = '#ffd34d'; g.strokeStyle = '#000'; g.lineWidth = 1; g.beginPath(); g.arc(s * 0.34, -s * 0.34, s * 0.09, 0, Math.PI * 2); g.fill(); g.stroke(); }
     } else {
       g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = s * 0.04; g.beginPath(); g.roundRect(-s * 0.34, -s * 0.34, s * 0.68, s * 0.68, s * 0.08); g.stroke();
       g.fillStyle = 'rgba(255,255,255,0.35)';

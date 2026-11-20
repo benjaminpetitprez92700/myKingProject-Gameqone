@@ -53,7 +53,7 @@ export class Pog {
     this._startTurn();
     if (!this.running) { this.running = true; this.last = performance.now(); requestAnimationFrame(this._loop); }
   }
-  stop() { this.running = false; window.removeEventListener('resize', this._onResize); }
+  stop() { this.running = false; this.hud.controls(null); window.removeEventListener('resize', this._onResize); }
   setPaused(p) { this.paused = p; if (!p) this.last = performance.now(); }
   isAI() { return this.opts.mode === 'ai' && this.turn === 1; }
 
@@ -70,7 +70,15 @@ export class Pog {
     this.powT = 0;
     this._hudUpdate();
     this.hud.toast(`À ${this.names[this.turn]} de frapper !`, 1200);
-    if (this.isAI()) setTimeout(() => this._aiPlay(), 1100);
+    if (this.isAI()) { this.hud.controls(null); setTimeout(() => this._aiPlay(), 1100); } else this._actBtn();
+  }
+
+  // gros bouton d'action (en plus du toucher sur l'écran)
+  _actBtn() {
+    if (this.isAI() || (this.phase !== 'aim' && this.phase !== 'power')) { this.hud.controls(null); return; }
+    const aim = this.phase === 'aim';
+    const el = this.hud.controls(`<div class="setup-ctl"><div class="setup-tip">${aim ? 'Appuie quand le viseur est au centre de la pile' : 'Appuie quand la jauge est dans la zone verte'}</div><div class="setup-btns"><button class="sbtn ${aim ? 'shuffle' : 'ready'} big" data-a="act"><span>${aim ? '🎯' : '💥'}</span>${aim ? 'Viser' : 'Frapper !'}</button></div></div>`);
+    el.querySelector('[data-a="act"]').addEventListener('pointerdown', (e) => { e.preventDefault(); this._tap(); });
   }
 
   _aimPos(t) { return { x: Math.sin(t * 1.9) * 0.95, y: Math.sin(t * 2.7 + 1.3) * 0.95 }; }
@@ -78,7 +86,7 @@ export class Pog {
 
   _tap() {
     if (!this.running || this.paused || this.isAI()) return;
-    if (this.phase === 'aim') { this.aimLock = this._aimPos(this.aimT); this.phase = 'power'; this.powT = 0; fx.gauge(); }
+    if (this.phase === 'aim') { this.aimLock = this._aimPos(this.aimT); this.phase = 'power'; this.powT = 0; fx.gauge(); this._actBtn(); }
     else if (this.phase === 'power') { this._slam(this.aimLock, this._powVal(this.powT)); }
   }
 
@@ -95,6 +103,7 @@ export class Pog {
 
   _slam(aim, power) {
     this.phase = 'slam';
+    this.hud.controls(null);
     this.slam = { t: 0, aim, power };
     fx.whoosh(0.25);
   }
@@ -333,7 +342,7 @@ export class Pog {
       g.fillStyle = '#fff'; g.fillRect(x - 8, cy - 2, w + 16, 4);
       g.beginPath(); g.moveTo(x - 8, cy); g.lineTo(x - 18, cy - 7); g.lineTo(x - 18, cy + 7); g.fill();
     }
-    if (!this.isAI()) {
+    if (false) {
       g.fillStyle = 'rgba(255,255,255,0.92)'; g.font = '800 15px system-ui'; g.textAlign = 'center';
       g.fillText(this.phase === 'aim' ? 'Touchez pour viser le centre de la pile' : 'Touchez dans la zone verte !', this.vw / 2, this.vh - 150);
     }
