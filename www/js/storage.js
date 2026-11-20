@@ -100,6 +100,10 @@ export function recordSnakeEndless(score) {
   return rec;
 }
 
+// Tarot : partie en cours (une par profil)
+export function saveTarot(game) { const p = current(); if (!p) return; p.tarot = game; save(); }
+export const getTarot = () => current()?.tarot || null;
+
 // Enregistre un résultat ; ne garde que le meilleur. Renvoie true si c'est un nouveau record.
 export function recordResult(levelId, shots, stars) {
   const p = current();

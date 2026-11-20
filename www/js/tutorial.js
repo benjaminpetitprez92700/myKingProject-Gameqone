@@ -6,6 +6,33 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  chess: {
+    name: 'Échecs',
+    slides: [
+      { title: 'Le but', text: "Mets le roi adverse en échec et mat : il est attaqué et ne peut plus s'échapper. Contre l'ordi, tu joues les blancs et tu commences.",
+        art: svg(`<rect width="240" height="160" fill="#3a2a1e"/>${[0,1,2,3,4,5].map(c=>[0,1,2,3].map(r=>`<rect x="${30+c*30}" y="${20+r*30}" width="30" height="30" fill="${(r+c)%2?'#a8703f':'#ecd3a5'}"/>`).join('')).join('')}<text x="135" y="72" text-anchor="middle" font-size="30" fill="#111">♚&#xFE0E;</text><text x="105" y="102" text-anchor="middle" font-size="28" fill="#fff" stroke="#2b1a0c" stroke-width="1.5">♛&#xFE0E;</text><circle class="t-glow" cx="135" cy="62" r="17" fill="none" stroke="#ff3b3b" stroke-width="3"/>`) },
+      { title: 'Jouer un coup', text: 'Touche une de tes pièces : les points verts montrent où elle peut aller. Touche ensuite la case d\'arrivée.',
+        art: svg(`<rect width="240" height="160" fill="#3a2a1e"/>${[0,1,2,3,4,5].map(c=>[0,1,2,3].map(r=>`<rect x="${30+c*30}" y="${20+r*30}" width="30" height="30" fill="${(r+c)%2?'#a8703f':'#ecd3a5'}"/>`).join('')).join('')}<rect x="90" y="110" width="30" height="30" fill="rgba(80,200,120,.55)"/><text x="105" y="133" text-anchor="middle" font-size="24" fill="#fff" stroke="#2b1a0c">♞&#xFE0E;</text><circle cx="75" cy="65" r="5" fill="rgba(20,120,60,.7)"/><circle cx="135" cy="65" r="5" fill="rgba(20,120,60,.7)"/><circle cx="165" cy="95" r="5" fill="rgba(20,120,60,.7)"/>${finger('t-tap')}`) },
+      { title: 'Les coups spéciaux', text: 'Tout est géré : le roque (le roi bouge de 2 cases), la prise en passant, et la promotion d\'un pion arrivé au bout (tu choisis la pièce).',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="60" y="80" text-anchor="middle" font-size="40" fill="#fff">♔&#xFE0E;</text><text x="120" y="80" text-anchor="middle" font-size="40" fill="#fff">♖&#xFE0E;</text><text x="185" y="80" text-anchor="middle" font-size="40" fill="#ffd34d">♙&#xFE0E;→♕&#xFE0E;</text><text x="90" y="120" class="t-lbl">roque</text><text x="185" y="120" class="t-lbl">promotion</text>`) },
+      { title: 'Les boutons', text: '« Annuler le coup » revient en arrière (contre l\'ordi, ça annule aussi sa réponse). « Abandonner » termine la partie.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><rect x="20" y="60" width="96" height="40" rx="12" fill="none" stroke="#fff" stroke-opacity=".4"/><text x="68" y="85" text-anchor="middle" fill="#fff" font-weight="800" font-size="13">↶ Annuler</text><rect x="124" y="60" width="96" height="40" rx="12" fill="none" stroke="#fff" stroke-opacity=".4"/><text x="172" y="85" text-anchor="middle" fill="#fff" font-weight="800" font-size="13">🏳 Abandonner</text>`) },
+    ],
+  },
+  tarot: {
+    name: 'Tarot à 5',
+    slides: [
+      { title: 'Les joueurs', text: 'Saisis les prénoms des 5 joueurs. La partie est sauvegardée : tu peux fermer l\'appli et la reprendre plus tard.',
+        art: svg(`<rect width="240" height="160" fill="#0f3d2c"/>${[0,1,2,3,4].map(i=>{const a=-Math.PI/2+i*2*Math.PI/5;return `<circle cx="${120+Math.cos(a)*55}" cy="${82+Math.sin(a)*50}" r="16" fill="#ffd34d"/><text x="${120+Math.cos(a)*55}" y="${87+Math.sin(a)*50}" text-anchor="middle" font-weight="900" fill="#3a2600">${i+1}</text>`}).join('')}<ellipse cx="120" cy="82" rx="30" ry="22" fill="#1d6b4c"/>`) },
+      { title: 'Chaque manche', text: 'Après chaque donne, appuie sur « Nouvelle manche » : qui a pris, avec qui (le roi appelé, ou « Seul »), le contrat, le nombre de bouts et les points faits par l\'attaque.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><rect x="30" y="20" width="180" height="120" rx="12" fill="#1a1233"/>${['Preneur','Appelé','Garde ×2','2 bouts · 41'].map((t,i)=>`<rect x="44" y="${32+i*26}" width="152" height="20" rx="6" fill="${i===2?'#ffd34d':'rgba(255,255,255,.1)'}"/><text x="120" y="${46+i*26}" text-anchor="middle" font-size="11" font-weight="800" fill="${i===2?'#2a2100':'#fff'}">${t}</text>`).join('')}`) },
+      { title: 'Le calcul', text: 'L\'appli calcule tout : (25 + écart) × contrat, petit au bout, poignée et chelem. Le preneur gagne ou perd le double, l\'appelé la mise, chaque défenseur l\'inverse. Seul, le preneur prend ×4.',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="60" text-anchor="middle" fill="#7ee08a" font-size="26" font-weight="900">+132</text><text x="60" y="110" text-anchor="middle" fill="#7ee08a" font-size="18" font-weight="900">+66</text><text x="180" y="110" text-anchor="middle" fill="#ff6b6b" font-size="18" font-weight="900">−66 ×3</text><text x="120" y="80" class="t-lbl">preneur</text><text x="60" y="128" class="t-lbl">appelé</text><text x="180" y="128" class="t-lbl">défense</text>`) },
+      { title: 'Le podium', text: 'Touche une manche pour la corriger. Quand vous avez fini, appuie sur « Terminé » pour afficher le podium !',
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><rect x="95" y="70" width="50" height="70" fill="#ffd34d"/><rect x="40" y="95" width="50" height="45" fill="#c9d0d8"/><rect x="150" y="110" width="50" height="30" fill="#cd7f32"/><text x="120" y="60" text-anchor="middle" font-size="24" class="t-stars">🏆</text><text x="120" y="110" text-anchor="middle" font-weight="900" font-size="22" fill="#3a2600">1</text>`) },
+    ],
+  },
+
   minigolf: {
     name: 'Mini Golf',
     slides: [

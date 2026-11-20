@@ -79,6 +79,12 @@
   <div class="level-grid" id="snakeGrid"></div>
 </section>
 
+<!-- Tarot : compteur de points -->
+<section class="screen" id="scr-tarot">
+  <header class="bar"><button class="icon-btn" data-back>‹</button><h2>Tarot à 5</h2><button class="icon-btn help" data-help="tarot" aria-label="Comment jouer">?</button></header>
+  <div id="tarotBody" class="tarot-body"></div>
+</section>
+
 <!-- Choix du mode (billard, pétanque, pogs) -->
 <section class="screen" id="scr-mode">
   <header class="bar"><button class="icon-btn" data-back>‹</button><h2 id="modeTitle"></h2><button class="icon-btn help" data-help="mode" aria-label="Comment jouer">?</button></header>
@@ -191,6 +197,8 @@
     <div class="tuto-nav"><button class="btn ghost" data-t="prev">Précédent</button><button class="btn primary" data-t="next">Suivant</button></div>
   </div>
 </div>
+
+<div class="modal tarot-modal" id="mdTarotRound"><div class="card"></div></div>
 
 <div class="modal" id="mdConfirm">
   <div class="card">

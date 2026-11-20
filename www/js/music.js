@@ -55,6 +55,14 @@ export const SONGS = {
     bassPat: 'x...........', stab: { pat: '....x...x...', vol: 0.045, cutoff: 2200, type: 'square', detune: 14 },
     lead: { vol: 0.055, type: 'square', cutoff: 2600, detune: 16, trem: true, notes: [72, _, 76, _, 79, _, 77, _, 76, _, 74, _, 71, _, 74, _, 77, _, 76, _, 74, _, 72, _, 69, _, 72, _, 77, _, 76, _, 74, _, 72, _, 74, _, 71, _, 67, _, 72, _, _, _, _, _] },
   },
+  chess: {
+    // piano feutré, arpèges classiques
+    bpm: 76, steps: 16, gain: 0.7, kit: 'none',
+    chords: [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]], bass: [45, 41, 38, 40],
+    bassPat: 'x.......x.......', arp: { pat: 'x.x.x.x.x.x.x.x.', vol: 0.05, oct: 12, type: 'triangle' },
+    pad: { vol: 0.025, cutoff: 900, type: 'triangle' },
+    lead: { vol: 0.045, type: 'sine', cutoff: 3000, notes: [76, _, _, 74, 72, _, 71, _, 72, _, _, 69, 65, _, _, _, 74, _, _, 72, 69, _, 65, _, 68, _, 71, _, 76, _, _, _] },
+  },
   snake: {
     // chiptune nerveuse
     bpm: 138, steps: 16, gain: 0.7, kit: 'chip',

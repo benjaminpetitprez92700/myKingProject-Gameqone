@@ -6,6 +6,8 @@ import { Billard } from './billard/game.js';
 import { Petanque } from './petanque/game.js';
 import { Pog } from './pog/game.js';
 import { Snake, SNAKE_LEVELS } from './snake/game.js';
+import { Chess } from './chess/game.js';
+import { mountTarot } from './tarot/ui.js';
 import { playIntro } from './intro.js';
 import { showTutorial } from './tutorial.js';
 import { playSong, setMusicOn, isMusicOn } from './music.js';
@@ -17,6 +19,13 @@ const starsHtml = (n, total = 3) => Array.from({ length: total }, (_, i) => `<i 
 
 // ---------- Illustrations des cartes ----------
 const ART = {
+  chess: `<svg viewBox="0 0 120 120"><defs><linearGradient id="cw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d8cdb8"/></linearGradient></defs>
+    ${[0,1,2,3].map(r=>[0,1,2,3].map(c=>`<rect x="${12+c*24}" y="${50+r*15}" width="24" height="15" fill="${(r+c)%2?'#a8703f':'#ecd3a5'}"/>`).join('')).join('')}
+    <g class="bob"><path d="M46 92 L74 92 L70 84 L68 60 Q76 54 70 44 L66 44 L66 36 L72 36 L72 30 L66 30 L66 24 L54 24 L54 30 L48 30 L48 36 L54 36 L54 44 L50 44 Q44 54 52 60 L50 84 Z" fill="url(#cw)" stroke="#2b1a0c" stroke-width="2.5" stroke-linejoin="round"/></g>
+    <path d="M80 96 L100 96 L98 90 Q104 70 92 62 Q96 58 92 54 Q86 52 84 60 Q78 66 84 72 L80 90 Z" fill="#1a1a1f" stroke="#e9dcc4" stroke-width="2"/></svg>`,
+  tarot: `<svg viewBox="0 0 120 120"><g transform="rotate(-14 60 70)"><rect x="22" y="26" width="44" height="66" rx="6" fill="#fff" stroke="#222" stroke-width="2"/><text x="44" y="66" text-anchor="middle" font-size="30" font-weight="900" fill="#c1121f">21</text></g>
+    <g transform="rotate(10 60 70)"><rect x="54" y="22" width="44" height="66" rx="6" fill="#fff" stroke="#222" stroke-width="2"/><text x="76" y="62" text-anchor="middle" font-size="28" fill="#111">♠</text><text x="62" y="36" font-size="10" font-weight="800">R</text></g>
+    <g class="bob"><rect x="30" y="88" width="64" height="20" rx="6" fill="#ffd34d" stroke="#5a3a00" stroke-width="2"/><text x="62" y="103" text-anchor="middle" font-size="12" font-weight="900" fill="#3a2600">+132</text></g></svg>`,
   snake: `<svg viewBox="0 0 240 120"><rect x="6" y="8" width="228" height="104" rx="14" fill="#2e6b3c" stroke="#b07a45" stroke-width="6"/>
     <g class="slither">${['#ffbe0b','#3a86ff','#ff006e','#06d6a0','#8338ec','#fb5607'].map((c,i)=>`<circle cx="${150-i*22}" cy="${62+Math.sin(i*1.1)*16}" r="${11-i*0.6}" fill="${c}"/><circle cx="${147-i*22}" cy="${58+Math.sin(i*1.1)*16}" r="3" fill="rgba(255,255,255,.7)"/>`).join('')}
     <circle cx="176" cy="58" r="15" fill="#2ec27e"/><circle cx="181" cy="52" r="5" fill="#fff"/><circle cx="181" cy="64" r="5" fill="#fff"/><circle cx="183" cy="52" r="2.4" fill="#111"/><circle cx="183" cy="64" r="2.4" fill="#111"/>
@@ -46,9 +55,12 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'chess', name: 'Échecs', tag: "Contre l'ordi ou à deux", cls: 'g-chess', badge: 'NOUVEAU' },
+  { id: 'tarot', name: 'Tarot à 5', tag: 'Compteur de points et podium', cls: 'g-tarot', badge: 'NOUVEAU' },
   { id: 'snake', name: 'Serpent', tag: 'Mange les billes, allonge ta queue, ne te mords pas !', cls: 'g-snake wide', badge: 'NOUVEAU' },
 ];
 const ARENA = {
+  chess: { cls: Chess, name: 'Échecs', desc: "Toutes les règles officielles : roque, prise en passant, promotion, échec et mat, pat. Touche une pièce pour voir ses coups possibles, puis touche la case d'arrivée." },
   snake: { cls: Snake, name: 'Serpent', desc: '' },
   pog: { cls: Pog, name: 'Pogs', desc: "Chacun met 5 pogs face cachée dans la pile. Vise, dose ta frappe dans la zone verte : tous les pogs qui retombent face visible sont à toi. Celui qui en gagne le plus remporte la partie." },
   billard: { cls: Billard, name: 'Billard américain', desc: "Règles du 8-ball : empoche toutes tes billes (pleines ou rayées) puis la noire. Glisse le doigt sur la table pour viser, tire la jauge vers le bas pour frapper." },
@@ -61,7 +73,8 @@ let stack = [];
 function songFor(id) {
   if (id === 'scr-intro') return null;
   if (id === 'scr-game') return 'golf';
-  if (id === 'scr-arena') return curArena;
+  if (id === 'scr-arena') return curArena === 'chess' ? 'chess' : curArena;
+  if (id === 'scr-tarot') return 'billard';
   return 'menu';
 }
 function show(id, push = true) {
@@ -70,7 +83,7 @@ function show(id, push = true) {
   render[id]?.();
   if (id !== 'scr-intro') playSong(songFor(id));
   // tutoriel automatique à la première ouverture de chaque jeu
-  const g = { 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena }[id];
+  const g = { 'scr-diff': 'minigolf', 'scr-snake': 'snake', 'scr-mode': curArena, 'scr-tarot': 'tarot' }[id];
   if (g && push && prof() && !prof().tuto?.[g]) setTimeout(() => openTutorial(g), 350);
 }
 function openTutorial(g, onDone) {
@@ -99,6 +112,7 @@ function back() {
   const m = document.querySelector('.modal.tuto.show') || document.querySelector('.modal.show');
   if (m) {
     if (m.id === 'mdTuto') { m.querySelector('[data-t="skip"]').click(); return true; }
+    if (m.id === 'mdTarotRound') { m.classList.remove('show'); return true; }
     if (m.id === 'mdPause') resume();
     else if (m.id === 'mdConfirm') closeModal('mdConfirm');
     return true;
@@ -142,6 +156,7 @@ function gameStat(id) {
   if (id === 'minigolf') return `★ ${store.totalStars(p)} / ${totalGolfStars()}`;
   if (id === 'snake') { const st = Object.values(s?.levels || {}).reduce((a, r) => a + r.stars, 0); return `★ ${st} / ${SNAKE_LEVELS.length * 3} · record infini : ${s?.record || 0}`; }
   if (!s) return 'Pas encore joué';
+  if (id === 'tarot') { const t = store.getTarot(); return t && !t.finished ? `Partie en cours · ${t.rounds.length} manche(s)` : 'Compteur de points'; }
   if (id === 'pog') return `${s.pogs || 0} pogs gagnés · ${s.wins || 0} victoire${s.wins > 1 ? 's' : ''}`;
   return `${s.wins || 0} victoire${s.wins > 1 ? 's' : ''} · ${s.played || 0} partie${s.played > 1 ? 's' : ''}`;
 }
@@ -294,6 +309,7 @@ $('gameGrid').onclick = (e) => {
   const id = c.dataset.g;
   if (id === 'minigolf') show('scr-diff');
   else if (id === 'snake') show('scr-snake');
+  else if (id === 'tarot') { show('scr-tarot'); openTarot(); }
   else { curArena = id; show('scr-mode'); }
 };
 
@@ -362,6 +378,22 @@ $('roomSeg').onclick = (e) => {
 };
 $('btnVsAI').onclick = () => { fx.tap(); startArena({ mode: 'ai', level: aiLevel }); };
 $('btnDuo').onclick = () => { fx.tap(); startArena({ mode: 'duo', level: aiLevel, p2: $('p2Name').value.trim() || 'Joueur 2' }); };
+
+// ---------- Tarot ----------
+function openTarot() {
+  mountTarot({
+    root: $('tarotBody'), modal: $('mdTarotRound'),
+    getGame: store.getTarot, saveGame: store.saveTarot,
+    defaultNames: () => { const ps = store.profiles(); const me = prof(); return [me.name, ...ps.filter((p) => p.id !== me.id).map((p) => p.name)].slice(0, 5); },
+    fx, confetti: tarotConfetti,
+  });
+}
+function tarotConfetti() {
+  const box = document.createElement('div'); box.className = 'confetti';
+  const cols = ['#ffd34d', '#ff006e', '#3a86ff', '#06d6a0', '#ffffff', '#8338ec'];
+  box.innerHTML = Array.from({ length: 80 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-delay:${Math.random() * 0.8}s;animation-duration:${2 + Math.random() * 1.5}s;transform:rotate(${Math.random() * 360}deg)"></i>`).join('');
+  document.body.appendChild(box); setTimeout(() => box.remove(), 4500);
+}
 
 // ---------- Parties ----------
 let golf = null, arena = null, arenaOpts = null, active = null;
