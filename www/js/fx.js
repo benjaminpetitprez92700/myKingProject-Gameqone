@@ -4,6 +4,10 @@ let ctx = null, master = null;
 let soundOn = true, hapticsOn = true;
 
 export function setPrefs({ sound, haptics }) { soundOn = sound; hapticsOn = haptics; }
+export const isSoundOn = () => soundOn;
+// contexte audio partagé (musique) ; null si indisponible
+export function audio() { unlockAudio(); return ctx ? { ctx, master } : null; }
+export const audioRunning = () => !!ctx && ctx.state === 'running';
 
 export function unlockAudio() {
   try {

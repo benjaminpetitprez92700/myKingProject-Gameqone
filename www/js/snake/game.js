@@ -38,8 +38,10 @@ export class Snake {
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     this.dpr = dpr; this.vw = this.canvas.clientWidth; this.vh = this.canvas.clientHeight;
+    // l'écran n'est pas encore affiché : on réessaie à l'image suivante (sinon le plateau fait 0 pixel)
+    if (this.vw < 50 || this.vh < 50) { requestAnimationFrame(() => this.running && this.resize()); return; }
     this.canvas.width = Math.round(this.vw * dpr); this.canvas.height = Math.round(this.vh * dpr);
-    const top = 128, bottom = 26, frame = 12;
+    const top = 128, bottom = this.opts?.dpad ? 214 : 26, frame = 12;
     this.cell = Math.floor(Math.min((this.vw - 24 - frame * 2) / COLS, (this.vh - top - bottom - frame * 2) / ROWS));
     this.bw = this.cell * COLS; this.bh = this.cell * ROWS;
     this.ox = Math.round((this.vw - this.bw) / 2);
@@ -70,9 +72,10 @@ export class Snake {
     this.resize();
     this._spawn();
     this._hud(true);
+    this._setupDpad();
     if (!this.running) { this.running = true; this.last = performance.now(); requestAnimationFrame(this._loop); }
   }
-  stop() { this.running = false; window.removeEventListener('resize', this._onResize); window.removeEventListener('keydown', this._onKey); }
+  stop() { this.running = false; this.hud.controls(null); window.removeEventListener('resize', this._onResize); window.removeEventListener('keydown', this._onKey); }
   setPaused(p) { this.paused = p; if (!p) this.last = performance.now(); }
 
   _hud(force) {
@@ -110,6 +113,20 @@ export class Snake {
     const [ax, ay] = DIRS[d], [bx, by] = DIRS[last];
     if (ax === -bx && ay === -by) return;          // demi-tour interdit
     if (this.queue.length < 3) { this.queue.push(d); fx.tick(); }
+  }
+
+  // croix directionnelle façon manette
+  _setupDpad() {
+    if (!this.opts.dpad) { this.hud.controls(null); return; }
+    const el = this.hud.controls(`<div class="dpad">
+      <button data-d="up" aria-label="Haut">▲</button><button data-d="left" aria-label="Gauche">◀</button>
+      <span class="dpad-center"></span><button data-d="right" aria-label="Droite">▶</button><button data-d="down" aria-label="Bas">▼</button></div>`);
+    el.onclick = null;
+    el.querySelectorAll('[data-d]').forEach((b) => {
+      b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.classList.add('on'); this._push(b.dataset.d); });
+      const off = () => b.classList.remove('on');
+      b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+    });
   }
 
   // ---------- Logique ----------
@@ -287,6 +304,7 @@ export class Snake {
 
   _render() {
     const g = this.ctx, dpr = this.dpr, cs = this.cell;
+    if (!(cs > 0)) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const bg = g.createRadialGradient(this.vw / 2, this.vh / 2, 40, this.vw / 2, this.vh / 2, this.vh * 0.8);
     bg.addColorStop(0, '#1a3a26'); bg.addColorStop(1, '#06120b');
@@ -345,7 +363,7 @@ export class Snake {
       g.globalAlpha = 1 - f * 0.3; g.fillStyle = '#ffd34d'; g.font = '900 72px system-ui'; g.textBaseline = 'middle';
       g.fillText(n > 0 ? String(n) : 'GO', 0, 0); g.restore(); g.globalAlpha = 1;
       g.fillStyle = '#fff'; g.font = '700 15px system-ui';
-      g.fillText('Glisse le doigt pour tourner', this.vw / 2, this.oy + this.bh * 0.62);
+      g.fillText(this.opts.dpad ? 'Utilise la croix pour tourner' : 'Glisse le doigt pour tourner', this.vw / 2, this.oy + this.bh * 0.62);
     }
   }
 

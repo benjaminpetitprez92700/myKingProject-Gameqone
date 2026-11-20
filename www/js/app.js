@@ -183,6 +183,8 @@ const render = {
   },
   'scr-snake'() {
     const s = prof().stats?.snake || { levels: {}, record: 0 };
+    const ctl = prof().settings.snakeCtl === 'dpad' ? 'dpad' : 'swipe';
+    $('snakeCtl').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.c === ctl));
     const firstOpen = SNAKE_LEVELS.findIndex((_, i) => !s.levels[i]);
     $('snakeGrid').innerHTML = SNAKE_LEVELS.map((lv, i) => {
       const r = s.levels[i], locked = i > 0 && !s.levels[i - 1];
@@ -277,11 +279,16 @@ $('levelGrid').onclick = (e) => {
 };
 
 // Serpent
+$('snakeCtl').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return; fx.tap();
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, snakeCtl: b.dataset.c } });
+  render['scr-snake']();
+};
 $('snakeGrid').onclick = (e) => {
   const b = e.target.closest('.lvl'); if (!b) return;
   if (b.classList.contains('locked')) { fx.lose(); return; }
   fx.tap(); curArena = 'snake';
-  startArena({ mode: 'solo', level: b.dataset.i === 'endless' ? 'endless' : +b.dataset.i });
+  startArena({ mode: 'solo', dpad: prof().settings.snakeCtl === 'dpad', level: b.dataset.i === 'endless' ? 'endless' : +b.dataset.i });
 };
 
 // Mode (billard / pétanque / pogs)
@@ -320,6 +327,21 @@ function startLevel(lv) {
   }
   golf.resize();
   golf.start(lv, prof());
+  watchSize(golf.canvas, golf);
+}
+
+// recalcule la taille du jeu dès que l'écran a sa vraie taille (évite un plateau vide au premier lancement)
+let sizeObs = null;
+function watchSize(el, game) {
+  sizeObs?.disconnect();
+  if (!window.ResizeObserver) return;
+  let w = 0, h = 0;
+  sizeObs = new ResizeObserver(() => {
+    if (el.clientWidth === w && el.clientHeight === h) return;
+    w = el.clientWidth; h = el.clientHeight;
+    if (w > 50 && h > 50 && game.running) game.resize();
+  });
+  sizeObs.observe(el);
 }
 
 let toastTimer = 0;
@@ -350,6 +372,7 @@ function startArena(opts) {
   arena?.stop();
   arena = new ARENA[curArena].cls($('arena'), hud);
   arena.start(arenaOpts);
+  watchSize($('arena'), arena);
 }
 
 function current() { return active === 'golf' ? golf : arena; }
@@ -418,7 +441,7 @@ function showSnakeResult(r) {
   const next = !r.endless && r.won && lv + 1 < SNAKE_LEVELS.length ? lv + 1 : null;
   $('btnNext').style.display = next != null ? '' : 'none';
   $('btnNext').textContent = 'Niveau suivant';
-  $('btnNext').onclick = () => { fx.tap(); startArena({ mode: 'solo', level: next }); };
+  $('btnNext').onclick = () => { fx.tap(); startArena({ mode: 'solo', dpad: prof().settings.snakeCtl === 'dpad', level: next }); };
   $('btnRetry').textContent = r.won ? 'Rejouer' : 'Réessayer';
   $('btnLevels').textContent = 'Liste des niveaux';
   openModal('mdResult');

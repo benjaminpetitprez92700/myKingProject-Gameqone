@@ -1,5 +1,6 @@
 // Intro animée « The King Game Arena » : les 5 objets des jeux arrivent en spirale, se percutent, et le logo explose à l'écran.
-import { fx, unlockAudio } from './fx.js';
+import { fx, unlockAudio, audioRunning } from './fx.js';
+import { startIntroMusic, stopIntroMusic, musicPlaying } from './music.js';
 
 const LINES = ['THE KING', 'GAME ARENA'];
 const COLORS = ['#ffd34d', '#ff006e', '#3a86ff', '#06d6a0', '#ff9f1c', '#8338ec'];
@@ -19,11 +20,15 @@ export function playIntro(canvas, onDone) {
 
   const T_HIT = 1.45, T_LOGO = 1.55, T_IDLE = 3.3;
 
+  // la musique démarre tout de suite si le navigateur l'autorise, sinon au premier toucher
+  unlockAudio();
+  if (audioRunning()) startIntroMusic(T_HIT);
   function tap() {
     unlockAudio();
+    if (!musicPlaying()) startIntroMusic(0);
     if (exitT >= 0) return;
     if (t < T_IDLE - 0.2) { if (!boomed) { boomed = true; burst(); } t = Math.max(t, T_IDLE - 0.2); return; }
-    exitT = 0; fx.whoosh(0.45);
+    exitT = 0; fx.whoosh(0.45); stopIntroMusic(1.6);
   }
   canvas.addEventListener('pointerdown', tap);
 
