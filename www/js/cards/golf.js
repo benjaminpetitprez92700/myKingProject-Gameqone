@@ -1,6 +1,6 @@
 // Cartes Cachées : le Golf, jeu de cartes traditionnel. Chaque joueur a une grille de cartes
 // face cachée (colonnes × lignes au choix) ; on pioche et on échange pour avoir le moins de points.
-// Une colonne entièrement formée de cartes identiques vaut 0. 2 à 5 joueurs, dont 1 ou 2 humains.
+// Une colonne entièrement formée de cartes identiques vaut 0. 2 à 4 joueurs installés en croix, dont 1 ou 2 humains.
 import { deck, shuffle, cardHTML } from './cards.js';
 import { fx } from '../fx.js';
 
@@ -42,7 +42,7 @@ export class CardGolf {
   start(opts) {
     this.opts = opts;
     const cfg = { players: 2, cols: 4, rows: 2, ...(opts.golf || {}) };
-    this.N = Math.max(2, Math.min(5, cfg.players)); this.cols = cfg.cols; this.rows = cfg.rows;
+    this.N = Math.max(2, Math.min(4, cfg.players)); this.cols = cfg.cols; this.rows = cfg.rows;
     this.size = this.cols * this.rows;
     this.humans = Math.min(this.N, opts.mode === 'ai' ? 1 : 2);
     const bots = this.N - this.humans;
@@ -208,10 +208,14 @@ export class CardGolf {
   _render() {
     if (!this.running) return;
     const P = this.players, cur = this.turn, me = this.view, end = this.phase === 'roundEnd';
-    const grid = (p, size) => `<div class="cg-grid ${p === cur && this.phase !== 'peek' && !end ? 'active' : ''}" style="grid-template-columns:repeat(${this.cols},auto)">${P[p].map((c, i) =>
+    const grid = (p, size, side = false) => `<div class="cg-grid ${p === cur && this.phase !== 'peek' && !end ? 'active' : ''}" style="${side ? `grid-template-rows:repeat(${this.cols},auto);grid-auto-flow:column` : `grid-template-columns:repeat(${this.cols},auto)`}">${P[p].map((c, i) =>
       cardHTML(c.card, { faceUp: c.up, size, extra: this._clickable(p, i) ? 'pick' : '', attrs: `data-p="${p}" data-i="${i}"` })).join('')}</div>`;
-    const opps = [...Array(this.N).keys()].filter((k) => k !== me);
-    const oppSize = this.N >= 4 || this.cols >= 5 ? 'xxs' : 'xs';
+    // places autour de la table : gauche, haut, droite (dans l'ordre du jeu)
+    const at = (o) => (me + o) % this.N;
+    const seats = this.N === 2 ? { top: at(1) } : this.N === 3 ? { left: at(1), right: at(2) } : { left: at(1), top: at(2), right: at(3) };
+    const sideSize = this.cols >= 5 || this.rows >= 3 ? 'xxs' : 'xs';
+    const topSize = this.N === 2 && this.cols <= 4 ? 'sm' : 'xs';
+    const seat = (k, side) => k == null ? '' : `<div class="cg-opp ${side ? 'side' : ''} ${k === cur && !end ? 'on' : ''}"><div class="cg-who">${this.names[k]} · <b>${gridScore(P[k], this.cols, end)}</b></div>${grid(k, side ? sideSize : topSize, side)}</div>`;
     const mySize = this.rows >= 3 || this.cols >= 5 ? 'sm' : 'md';
     const top = this.discard[this.discard.length - 1];
     const human = this._isHuman(cur);
@@ -223,16 +227,19 @@ export class CardGolf {
     else if (this.phase === 'place') tip = this.drawnFrom === 'pile' ? 'Échange-la avec une de tes cartes, ou jette-la' : 'Échange-la avec une de tes cartes';
     else if (this.phase === 'flip') tip = 'Retourne une de tes cartes cachées';
     this.dom.innerHTML = `
-      <div class="cg">
-        <div class="cg-opps n${opps.length}">${opps.map((k) => `<div class="cg-opp ${k === cur && !end ? 'on' : ''}"><div class="cg-who">${this.names[k]} · <b>${gridScore(P[k], this.cols, end)}</b></div>${grid(k, oppSize)}</div>`).join('')}</div>
-        <div class="cg-center">
-          <div class="cg-pile ${human && this.phase === 'draw' ? 'pick' : ''}" data-a="pile">${cardHTML(this.pile[0], { faceUp: false, size: 'md' })}<span>Pioche (${this.pile.length})</span></div>
-          <div class="cg-drawn">${this.drawn ? cardHTML(this.drawn, { size: 'lg', extra: 'pop' }) : ''}</div>
-          <div class="cg-pile ${human && this.phase === 'draw' ? 'pick' : ''}" data-a="discard">${cardHTML(top, { size: 'md' })}<span>Défausse</span></div>
+      <div class="cg cross">
+        <div class="cg-top">${seat(seats.top, false)}</div>
+        <div class="cg-left">${seat(seats.left, true)}</div>
+        <div class="cg-mid">
+          <div class="cg-center">
+            <div class="cg-pile ${human && this.phase === 'draw' ? 'pick' : ''}" data-a="pile">${cardHTML(this.pile[0], { faceUp: false, size: 'md' })}<span>Pioche (${this.pile.length})</span></div>
+            <div class="cg-drawn">${this.drawn ? cardHTML(this.drawn, { size: 'lg', extra: 'pop' }) : ''}</div>
+            <div class="cg-pile ${human && this.phase === 'draw' ? 'pick' : ''}" data-a="discard">${cardHTML(top, { size: 'md' })}<span>Défausse</span></div>
+          </div>
+          <div class="cg-tip">${tip}</div>
         </div>
-        <div class="cg-tip">${tip}</div>
-        ${grid(me, mySize)}
-        <div class="cg-who me">${this.names[me]} · <b>${gridScore(P[me], this.cols, end)}</b> pts visibles</div>
+        <div class="cg-right">${seat(seats.right, true)}</div>
+        <div class="cg-me">${grid(me, mySize)}<div class="cg-who me">${this.names[me]} · <b>${gridScore(P[me], this.cols, end)}</b> pts visibles</div></div>
       </div>`;
     this.dom.onclick = (e) => {
       const c = e.target.closest('[data-p]');

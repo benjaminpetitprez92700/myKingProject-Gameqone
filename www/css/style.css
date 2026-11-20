@@ -695,3 +695,13 @@ h1, h2 { margin: 0; }
 .join-row input { flex: 1; min-width: 0; text-align: center; font-size: 1.4rem; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; border-radius: 14px; border: 2px solid rgba(255,255,255,.15); background: rgba(0,0,0,.3); color: #fff; padding: 10px; }
 .join-row .btn { flex: 0 0 auto; width: auto; padding-left: 18px; padding-right: 18px; margin: 0; }
 .online-code { font-size: 3rem; font-weight: 900; letter-spacing: 10px; color: var(--accent); text-align: center; margin: 10px 0; text-shadow: 0 0 18px rgba(255,211,77,.4); }
+
+/* Cartes Cachées : joueurs installés en croix */
+.cg.cross { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto; grid-template-areas: "top top top" "left mid right" "me me me"; align-items: center; justify-items: center; gap: 4px; padding: 2px 4px; }
+.cg-top { grid-area: top; } .cg-left { grid-area: left; } .cg-right { grid-area: right; }
+.cg-mid { grid-area: mid; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+.cg-me { grid-area: me; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.cg.cross .cg-center { gap: 8px; }
+.cg-opp.side { padding: 3px 2px; }
+.cg-opp.side .cg-who { font-size: .66rem; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cg.cross .cg-tip { font-size: .78rem; padding: 5px 8px; }

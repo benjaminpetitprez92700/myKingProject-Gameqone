@@ -80,6 +80,7 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'island', name: 'Archipel du Roi', tag: 'Colonise l\'île : huttes, forts et phares', cls: 'g-island', badge: 'NOUVEAU' },
   { id: 'rami', name: 'Rami à Contrats', tag: 'Brelans, suites et 6 contrats', cls: 'g-rami', badge: 'NOUVEAU' },
   { id: 'golfcards', name: 'Cartes Cachées', tag: 'Le moins de points gagne (Golf)', cls: 'g-golfcards', badge: 'NOUVEAU' },
   { id: 'tower', name: 'Défense du Royaume', tag: 'Tower defense : protège ton château', cls: 'g-tower', badge: 'NOUVEAU' },
@@ -93,7 +94,7 @@ const GAMES = [
 const ARENA = {
   island: { cls: Island, name: 'Archipel du Roi', desc: "Jeu de colons original : lance le dé, récolte bois, pierre, blé et poisson sur les îles, construis chemins, huttes, forts et phares. Attention au volcan ! Le premier à 10 couronnes gagne." },
   rami: { cls: Rami, name: 'Rami à Contrats', desc: "Rami traditionnel en 6 manches : à chaque manche, un contrat à poser (brelans, suites de 4). Ensuite, complète les combinaisons sur la table et vide ta main en premier ! Le moins de points gagne." },
-  golfcards: { cls: CardGolf, name: 'Cartes Cachées', desc: "Le Golf, jeu de cartes traditionnel : chacun a une grille de cartes cachées (taille au choix, 2 à 5 joueurs). Pioche, échange et retourne tes cartes pour avoir le moins de points. Une colonne de cartes identiques vaut 0 ! 6 manches." },
+  golfcards: { cls: CardGolf, name: 'Cartes Cachées', desc: "Le Golf, jeu de cartes traditionnel : chacun a une grille de cartes cachées (taille au choix, 2 à 4 joueurs). Pioche, échange et retourne tes cartes pour avoir le moins de points. Une colonne de cartes identiques vaut 0 ! 6 manches." },
   tower: { cls: TowerDefense, name: 'Défense du Royaume', desc: '' },
   stratego: { cls: Stratego, name: 'Guerre Éclair', desc: "Règles du Stratego : 40 pièces cachées par camp. Déplace-toi d'une case, attaque pour révéler les pièces : la plus forte gagne. Capture le drapeau ennemi pour gagner. Attention aux bombes !" },
   chess: { cls: Chess, name: 'Échecs', desc: "Toutes les règles officielles : roque, prise en passant, promotion, échec et mat, pat. Touche une pièce pour voir ses coups possibles, puis touche la case d'arrivée." },
@@ -486,7 +487,7 @@ $('btnJoin').onclick = async () => {
 $('joinCode').oninput = (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
 $('onCancel').onclick = () => { fx.tap(); onlineReq?.cancel(); onlineReq = null; closeModal('mdOnline'); };
 
-function golfCfg() { return { players: 2, cols: 4, rows: 2, ...(prof().settings.golfCfg || {}) }; }
+function golfCfg() { const c = { players: 2, cols: 4, rows: 2, ...(prof().settings.golfCfg || {}) }; c.players = Math.min(4, c.players); return c; }
 function renderGolfCfg() {
   const c = golfCfg();
   for (const [id, k] of [['gcPlayers', 'players'], ['gcCols', 'cols'], ['gcRows', 'rows']]) $(id).querySelectorAll('button').forEach((b) => b.classList.toggle('sel', +b.dataset.v === c[k]));

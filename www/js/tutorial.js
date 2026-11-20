@@ -37,7 +37,7 @@ export const TUTORIALS = {
   golfcards: {
     name: 'Cartes Cachées',
     slides: [
-      { title: 'Le but', text: "Avoir le MOINS de points possible après 6 manches. Chacun a une grille de cartes face cachée (tu choisis le nombre de colonnes et de lignes, et de 2 à 5 joueurs). Au début, retourne-en 2.",
+      { title: 'Le but', text: "Avoir le MOINS de points possible après 6 manches. Chacun a une grille de cartes face cachée (tu choisis le nombre de colonnes et de lignes, et de 2 à 4 joueurs). Au début, retourne-en 2.",
         art: svg(`<rect width="240" height="160" fill="#1f7a4c"/>${[0,1,2,3].map(c=>[0,1].map(r=>`<rect x="${44+c*40}" y="${30+r*52}" width="32" height="46" rx="4" fill="${c+r===1||c===3&&r===0?'#fff':'#5b2a86'}" stroke="#111"/>`).join('')).join('')}${finger('t-tap')}`) },
       { title: 'À ton tour', text: "Pioche une carte cachée, ou prends celle de la défausse. Échange-la avec une de tes cartes. Si tu as pioché et qu'elle ne te plaît pas, jette-la et retourne une de tes cartes cachées.",
         art: svg(`<rect width="240" height="160" fill="#1f7a4c"/><rect x="50" y="40" width="44" height="62" rx="5" fill="#5b2a86" stroke="#111"/><rect x="146" y="40" width="44" height="62" rx="5" fill="#fff" stroke="#111"/><text x="168" y="80" text-anchor="middle" font-size="22" font-weight="900" fill="#c1121f">3</text><text x="72" y="125" class="t-lbl">pioche</text><text x="168" y="125" class="t-lbl">défausse</text>`) },
