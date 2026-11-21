@@ -43,6 +43,8 @@ export class Snake {
     this.canvas.width = Math.round(this.vw * dpr); this.canvas.height = Math.round(this.vh * dpr);
     const top = 128, bottom = this.opts?.dpad ? 214 : 26, frame = 12;
     this.cell = Math.floor(Math.min((this.vw - 24 - frame * 2) / COLS, (this.vh - top - bottom - frame * 2) / ROWS));
+    // zone encore trop petite (transition d'écran, clavier…) : on réessaie plutôt que de rester sur un écran vide
+    if (!(this.cell >= 6)) { this.cell = 0; requestAnimationFrame(() => this.running && this.resize()); return; }
     this.bw = this.cell * COLS; this.bh = this.cell * ROWS;
     this.ox = Math.round((this.vw - this.bw) / 2);
     this.oy = Math.round(top + (this.vh - top - bottom - this.bh) / 2);
@@ -227,10 +229,17 @@ export class Snake {
   // ---------- Boucle ----------
   _loop(now) {
     if (!this.running) return;
-    const dt = Math.min(0.05, (now - this.last) / 1000); this.last = now;
-    if (!this.paused) this._tick(dt);
-    this._render();
+    // on reprogramme d'abord l'image suivante : une erreur ponctuelle ne doit jamais figer le jeu (écran noir)
     requestAnimationFrame(this._loop);
+    const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000)); this.last = now;
+    try {
+      if (!this.paused) this._tick(dt);
+      this._render();
+    } catch (e) {
+      console.error('serpent', e);
+      this.board = null;
+      if ((this._errs = (this._errs || 0) + 1) % 30 === 1) this.resize();
+    }
   }
 
   _tick(dt) {
@@ -307,7 +316,12 @@ export class Snake {
 
   _render() {
     const g = this.ctx, dpr = this.dpr, cs = this.cell;
-    if (!(cs > 0)) return;
+    if (!(cs > 0)) {
+      // pas encore de taille : fond sombre plutôt que noir, et on retente la mise en page
+      g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0d2016'; g.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      if (!this._retry) { this._retry = true; requestAnimationFrame(() => { this._retry = false; this.running && this.resize(); }); }
+      return;
+    }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const bg = g.createRadialGradient(this.vw / 2, this.vh / 2, 40, this.vw / 2, this.vh / 2, this.vh * 0.8);
     bg.addColorStop(0, '#1a3a26'); bg.addColorStop(1, '#06120b');
