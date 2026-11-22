@@ -11,6 +11,7 @@ import { mountTarot } from './tarot/ui.js';
 import { Stratego } from './stratego/game.js';
 import { CardGolf } from './cards/golf.js';
 import { Rami } from './cards/rami.js';
+import { Bataille } from './cards/bataille.js';
 import { Island } from './island/game.js';
 import { HUB_ART } from './hubart.js';
 import { hostGame, joinGame } from './net.js';
@@ -80,6 +81,7 @@ const GAMES = [
   { id: 'pog', name: 'Pogs', tag: 'Frappe la pile, retourne les pogs', cls: 'g-pog' },
   { id: 'billard', name: 'Billard américain', tag: 'Le 8-ball, seul ou à deux', cls: 'g-pool' },
   { id: 'petanque', name: 'Pétanque', tag: 'Pointe ou tire, vise le cochonnet', cls: 'g-boule' },
+  { id: 'bataille', name: 'La Bataille', tag: 'La carte la plus forte gagne !', cls: 'g-bataille', badge: 'NOUVEAU' },
   { id: 'island', name: 'Archipel du Roi', tag: 'Colonise l\'île : huttes, forts et phares', cls: 'g-island', badge: 'NOUVEAU' },
   { id: 'rami', name: 'Rami à Contrats', tag: 'Brelans, suites et 6 contrats', cls: 'g-rami', badge: 'NOUVEAU' },
   { id: 'golfcards', name: 'Cartes Cachées', tag: 'Le moins de points gagne (Golf)', cls: 'g-golfcards', badge: 'NOUVEAU' },
@@ -93,6 +95,7 @@ const GAMES = [
 ];
 const ARENA = {
   island: { cls: Island, name: 'Archipel du Roi', desc: "Jeu de colons original : lance le dé, récolte bois, pierre, blé et poisson sur les îles, construis chemins, huttes, forts et phares. Attention au volcan ! Le premier à 10 couronnes gagne." },
+  bataille: { cls: Bataille, name: 'La Bataille', desc: "Le grand classique : chacun retourne sa carte, la plus forte remporte le pli. Égalité ? BATAILLE ! Une carte cachée, une carte visible, et le gagnant rafle tout. Contre l'ordi, à deux ou en ligne." },
   rami: { cls: Rami, name: 'Rami à Contrats', desc: "Rami traditionnel en 6 manches : à chaque manche, un contrat à poser (brelans, suites de 4). Ensuite, complète les combinaisons sur la table et vide ta main en premier ! Le moins de points gagne." },
   golfcards: { cls: CardGolf, name: 'Cartes Cachées', desc: "Le Golf, jeu de cartes traditionnel : chacun a une grille de cartes cachées (taille au choix, 2 à 4 joueurs). Pioche, échange et retourne tes cartes pour avoir le moins de points. Une colonne de cartes identiques vaut 0 ! 6 manches." },
   tower: { cls: TowerDefense, name: 'Défense du Royaume', desc: '' },
@@ -327,6 +330,9 @@ const render = {
     $('optStyle').style.display = curArena === 'stratego' ? '' : 'none';
     $('optGolf').style.display = curArena === 'golfcards' ? '' : 'none';
     $('optOnline').style.display = ONLINE_GAMES.includes(curArena) ? '' : 'none';
+    $('optBataille').style.display = curArena === 'bataille' ? '' : 'none';
+    const bl = prof().settings.batailleLen || 'normale';
+    $('btLen').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.v === bl));
     if (curArena === 'golfcards') renderGolfCfg();
     const pst = prof().settings.strategoStyle || 'france';
     $('styleSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === pst));
@@ -458,7 +464,7 @@ $('styleSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
   const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoStyle: b.dataset.s } });
 }));
 // ---------- Jeu en ligne ----------
-const ONLINE_GAMES = ['chess', 'stratego'];
+const ONLINE_GAMES = ['chess', 'stratego', 'bataille'];
 let onlineReq = null;
 function onlineModal(title, code, text) { $('onTitle').textContent = title; $('onCode').textContent = code; $('onText').textContent = text; openModal('mdOnline'); }
 const onlineFail = (m) => { onlineReq = null; $('onCode').textContent = '⚠️'; $('onText').textContent = m; $('onCancel').textContent = 'Fermer'; };
@@ -483,6 +489,11 @@ $('btnJoin').onclick = async () => {
   onlineModal('Rejoindre', code, 'Connexion à la partie de ton ami…');
   const me = prof().name;
   onlineReq = await joinGame({ code, game: curArena, name: me, onReady: (link, other) => startOnline(link, 1, [other, me]), onError: onlineFail });
+};
+$('btLen').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return; fx.tap();
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, batailleLen: b.dataset.v } });
+  $('btLen').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
 };
 $('joinCode').oninput = (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
 $('onCancel').onclick = () => { fx.tap(); onlineReq?.cancel(); onlineReq = null; closeModal('mdOnline'); };
@@ -633,7 +644,7 @@ function startArena(opts) {
   $('btnRetry').style.display = '';
   const p = prof();
   arenaOpts = {
-    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', golf: golfCfg(),
+    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', golf: golfCfg(), length: prof().settings.batailleLen || 'normale',
     names: opts.names || [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };

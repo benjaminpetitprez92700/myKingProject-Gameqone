@@ -6,6 +6,20 @@ const svg = (body) => `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/
 const green = (extra = '') => `<rect x="0" y="0" width="240" height="160" fill="#5c9e45"/><path d="M60 170 L60 40 Q60 20 80 20 L160 20 Q180 20 180 40 L180 170" fill="#3d9a47" stroke="#8a6038" stroke-width="7"/>${extra}`;
 
 export const TUTORIALS = {
+  bataille: {
+    name: 'La Bataille',
+    slides: [
+      { title: 'Le but', text: "Les 52 cartes sont partagées entre les deux joueurs. Le but : gagner toutes les cartes ! Chacun touche son tas pour retourner la carte du dessus.",
+        art: svg(`<rect width="240" height="160" fill="#1d5a8c"/><rect x="40" y="40" width="50" height="72" rx="6" fill="#5b2a86" stroke="#ffd34d" stroke-width="2"/><rect x="150" y="40" width="50" height="72" rx="6" fill="#5b2a86" stroke="#ffd34d" stroke-width="2"/>${finger('t-tap')}`) },
+      { title: 'La plus forte gagne', text: "As > Roi > Dame > Valet > 10 > … > 2. La carte la plus forte remporte le pli : son joueur glisse les deux cartes sous son tas.",
+        art: svg(`<rect width="240" height="160" fill="#1d5a8c"/><rect x="50" y="36" width="56" height="80" rx="6" fill="#fff" stroke="#5ef08f" stroke-width="4"/><text x="78" y="88" text-anchor="middle" font-size="34" fill="#c1121f">♚</text><rect x="134" y="36" width="56" height="80" rx="6" fill="#fff" opacity=".6"/><text x="162" y="88" text-anchor="middle" font-size="30" font-weight="900" fill="#111">7</text><text x="120" y="140" class="t-lbl">le Roi gagne !</text>`) },
+      { title: 'Bataille !', text: "Deux cartes de même valeur ? BATAILLE ! Chacun pose une carte cachée puis une carte visible. La plus forte rafle TOUT le tas. Ça peut recommencer plusieurs fois !",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="70" text-anchor="middle" font-size="30" font-weight="900" fill="#ffd34d">⚔️ BATAILLE !</text><text x="120" y="115" class="t-lbl">1 cachée + 1 visible</text>`) },
+      { title: 'Comment jouer', text: "Contre l'ordi, à deux sur le même téléphone (chacun son côté de l'écran) ou en ligne avec un code. Le bouton ⚡ joue tout seul pour aller plus vite. Choisis la durée : 60 plis, 150 plis ou jusqu'au bout.",
+        art: svg(`<rect width="240" height="160" fill="#241a45"/><text x="120" y="80" text-anchor="middle" font-size="40">🌐 ⚡</text><text x="120" y="125" class="t-lbl">en ligne · automatique</text>`) },
+    ],
+  },
+
   island: {
     name: 'Archipel du Roi',
     slides: [

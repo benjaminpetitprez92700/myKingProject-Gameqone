@@ -71,6 +71,15 @@ export const SONGS = {
     pad: { vol: 0.025, cutoff: 900, type: 'triangle' },
     lead: { vol: 0.045, type: 'sine', cutoff: 3000, notes: [76, _, _, 74, 72, _, 71, _, 72, _, _, 69, 65, _, _, _, 74, _, _, 72, 69, _, 65, _, 68, _, 71, _, 76, _, _, _] },
   },
+  bataille: {
+    // swing manouche de guinguette : pompe à la guitare et accordéon
+    bpm: 136, steps: 16, gain: 0.8, swing: 0.2, kit: 'brush',
+    chords: [[55, 58, 62], [55, 58, 62], [60, 63, 67], [62, 66, 69], [55, 58, 62], [51, 55, 58], [50, 54, 57], [55, 58, 62]],
+    bass: [43, 38, 36, 38, 43, 39, 38, 43],
+    bassPat: 'x...x...x...x...', drums: { kick: 'x.......x.......', snare: '....x.......x...', hat: 'x.xxx.xxx.xxx.xx' },
+    stab: { pat: '..x...x...x...x.', vol: 0.04, cutoff: 2600, type: 'square', detune: 8 },
+    lead: { vol: 0.05, type: 'square', cutoff: 2800, detune: 14, trem: true, notes: [67, _, 70, 74, _, 72, 70, 69, 70, _, 67, _, 62, _, _, _, 72, _, 75, 79, _, 77, 75, 74, 72, _, 69, 66, 69, _, _, _, 67, _, 70, 74, _, 79, 77, 75, 74, _, 70, 67, 66, _, 69, _, 67, _, _, _, _, _, _, _, 74, 72, 70, _, 69, _, 67, _] },
+  },
   snake: {
     // chiptune nerveuse
     bpm: 138, steps: 16, gain: 0.7, kit: 'chip',

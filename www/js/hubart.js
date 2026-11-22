@@ -35,6 +35,12 @@ function stratego() {
 }
 
 export const HUB_ART = {
+  bataille: () => `<svg viewBox="0 0 120 120">${DEFS}
+    ${card(4, 14, 30, 42, '', '', { back: true, rot: -6 })}${card(86, 64, 30, 42, '', '', { back: true, rot: 6 })}
+    <g class="bob">${card(26, 26, 36, 52, 'R', '♥', { rot: -12 })}</g>${card(58, 40, 36, 52, 'D', '♠', { rot: 10 })}
+    <g><path d="M60 8 l6 10 l11 -3 l-5 10 l10 6 l-11 3 l2 11 l-9 -6 l-7 9 l-1 -11 l-11 -2 l9 -7 l-5 -10 l11 3 Z" fill="#ffb703" stroke="#e85d04" stroke-width="1.5" transform="translate(0 64) scale(.7)"/></g>
+    <rect x="22" y="98" width="76" height="18" rx="9" fill="#ffd34d"/><text x="60" y="111" text-anchor="middle" font-size="9.5" font-weight="900" fill="#3a2600">⚔️ BATAILLE !</text></svg>`,
+
   rami: () => `<svg viewBox="0 0 120 120">${DEFS}
     <rect x="4" y="8" width="112" height="104" rx="14" fill="rgba(0,0,0,.22)"/>
     ${[['4', 0], ['5', 1], ['6', 2], ['7', 3]].map(([r, i]) => card(10 + i * 19, 14, 30, 42, r, '♥')).join('')}

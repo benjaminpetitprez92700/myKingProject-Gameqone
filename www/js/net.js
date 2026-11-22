@@ -22,7 +22,13 @@ const newCode = () => Array.from({ length: 4 }, () => ALPHA[Math.floor(Math.rand
 class Link {
   constructor(peer, conn) {
     this.peer = peer; this.conn = conn; this.handlers = {}; this.closeFns = []; this.closed = false;
-    conn.on('data', (msg) => { if (msg && msg.t) (this.handlers[msg.t] || []).forEach((f) => f(msg)); });
+    // les messages qui arrivent avant que le jeu écoute sont gardés puis délivrés dès qu'il écoute
+    this.pending = {};
+    conn.on('data', (msg) => {
+      if (!msg || !msg.t) return;
+      const hs = this.handlers[msg.t];
+      if (hs && hs.length) hs.forEach((f) => f(msg)); else (this.pending[msg.t] ||= []).push(msg);
+    });
     const bye = () => { if (this.closed) return; this.closed = true; this.closeFns.forEach((f) => f()); };
     conn.on('close', bye); conn.on('error', bye);
     this.handlers.bye = [bye];
@@ -33,7 +39,11 @@ class Link {
     this._watch = setInterval(() => { if (Date.now() - this._last > 15000) bye(); }, 3000);
   }
   send(obj) { try { if (this.conn.open) this.conn.send(obj); } catch (e) { /* rien */ } }
-  on(t, fn) { (this.handlers[t] ||= []).push(fn); return () => (this.handlers[t] = this.handlers[t].filter((f) => f !== fn)); }
+  on(t, fn) {
+    (this.handlers[t] ||= []).push(fn);
+    const waiting = this.pending[t]; if (waiting) { delete this.pending[t]; setTimeout(() => waiting.forEach((m) => fn(m)), 0); }
+    return () => (this.handlers[t] = this.handlers[t].filter((f) => f !== fn));
+  }
   off(t) { delete this.handlers[t]; }
   onClose(fn) { this.closeFns.push(fn); }
   close() {
