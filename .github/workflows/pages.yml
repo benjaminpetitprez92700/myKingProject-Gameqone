@@ -23,8 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Assembler le site (arène + Guerre Éclair)
+        run: |
+          mkdir _site
+          cp -r www/. _site/
+          mkdir _site/eclair && cp -r eclair/. _site/eclair/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: www
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

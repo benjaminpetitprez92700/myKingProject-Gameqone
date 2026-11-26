@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1f12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Guerre Éclair</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/eclair.css">
+</head>
+<body class="eclair">
+
+<!-- Menu -->
+<section class="screen active" id="scr-menu">
+  <div class="center-col ec-menu">
+    <div class="ec-hero">
+      <canvas id="heroArt" width="220" height="220"></canvas>
+      <div>
+        <h1 class="ec-title">GUERRE<br><span>ÉCLAIR</span></h1>
+        <p class="muted small">Le jeu de stratégie militaire aux vignettes cachées</p>
+        <p class="ec-stats" id="stats"></p>
+      </div>
+    </div>
+
+    <div class="mode-card">
+      <label class="field"><span>Ton nom</span><input id="myName" maxlength="16" autocomplete="off" placeholder="Joueur"></label>
+    </div>
+
+    <div class="mode-card">
+      <h3>Règlement</h3>
+      <div class="seg" id="rulesSeg"><button data-v="complet">🎖️ Complet (48)</button><button data-v="facile">🧒 Facile (36)</button></div>
+      <h3 style="margin-top:12px">Placement des vignettes</h3>
+      <div class="seg" id="placeSeg"><button data-v="auto">🎲 Automatique</button><button data-v="manuel">✋ À la main</button></div>
+      <h3 style="margin-top:12px">Dessins des vignettes</h3>
+      <div class="seg" id="styleSeg"><button data-v="moderne">🪖 Moderne</button><button data-v="france">🇫🇷 France 1914</button></div>
+    </div>
+
+    <div class="ec-modes">
+      <div class="mode-card">
+        <h3>🤖 Contre l'ordi</h3>
+        <div class="seg" id="levelSeg"><button data-v="facile">Facile</button><button data-v="moyen">Moyen</button><button data-v="difficile">Difficile</button></div>
+        <button class="btn primary" id="btnVsAI">Jouer</button>
+      </div>
+      <div class="mode-card">
+        <h3>👥 À deux sur cet appareil</h3>
+        <label class="field"><span>Nom du joueur 2</span><input id="p2Name" maxlength="16" autocomplete="off" placeholder="Joueur 2"></label>
+        <button class="btn ghost" id="btnDuo">Jouer à deux</button>
+      </div>
+      <div class="mode-card">
+        <h3>🌐 En ligne avec un ami</h3>
+        <p class="muted small">Chacun sur son appareil (téléphone ou ordinateur). L'un crée la partie, l'autre tape le code.</p>
+        <button class="btn primary" id="btnHost">Créer une partie</button>
+        <div class="join-row"><input id="joinCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn ghost" id="btnJoin">Rejoindre</button></div>
+      </div>
+    </div>
+
+    <div class="ec-foot">
+      <button class="btn ghost" id="btnRules">❓ Règles du jeu</button>
+      <label class="toggle"><span>🔊 Sons</span><input type="checkbox" id="setSound" checked><i></i></label>
+    </div>
+  </div>
+</section>
+
+<!-- Partie -->
+<section class="screen game" id="scr-arena">
+  <canvas id="arena"></canvas>
+  <div class="hud top">
+    <button class="icon-btn glass" id="btnPause" aria-label="Pause">❚❚</button>
+    <button class="icon-btn glass help-ingame" id="btnHelp" aria-label="Règles du jeu">?</button>
+    <div class="hud-title"><b>Guerre Éclair</b></div>
+    <div class="chip glass" id="arenaChip"></div>
+  </div>
+  <div class="score-bar" id="scoreBar"></div>
+  <div class="toast" id="toast"></div>
+  <div class="arena-controls" id="arenaControls"></div>
+</section>
+
+<div class="modal" id="mdPause">
+  <div class="card">
+    <h2>Pause</h2>
+    <button class="btn primary" id="btnResume">Reprendre</button>
+    <button class="btn ghost" id="btnHelpPause">❓ Règles du jeu</button>
+    <button class="btn ghost" id="btnRestart">Recommencer</button>
+    <button class="btn ghost" id="btnQuit">Quitter</button>
+  </div>
+</div>
+
+<div class="modal" id="mdResult">
+  <div class="card">
+    <h2 id="resTitle"></h2>
+    <p id="resText" class="muted"></p>
+    <button class="btn primary" id="btnRetry">Rejouer</button>
+    <button class="btn ghost" id="btnMenu">Menu</button>
+  </div>
+</div>
+
+<div class="modal tuto" id="mdTuto">
+  <div class="card">
+    <div class="tuto-head"><span class="tuto-game"></span><button class="tuto-skip" data-t="skip">Passer</button></div>
+    <div class="tuto-art"></div>
+    <h2 class="tuto-title"></h2>
+    <p class="tuto-text"></p>
+    <div class="tuto-dots"></div>
+    <div class="tuto-nav"><button class="btn ghost" data-t="prev">Précédent</button><button class="btn primary" data-t="next">Suivant</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mdOnline">
+  <div class="card">
+    <h2 id="onTitle">En ligne</h2>
+    <div class="online-code" id="onCode">…</div>
+    <p id="onText" class="muted"></p>
+    <button class="btn ghost" id="onCancel">Annuler</button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+/* Habillage propre à l'appli Guerre Éclair */
+body.eclair { background: radial-gradient(ellipse at top, #3a4527 0%, #1a1f12 60%, #0e110a 100%); }
+body.eclair .screen:not(.game) { background: transparent; }
+.ec-menu { max-width: 980px; padding-bottom: 28px; }
+.ec-hero { display: flex; align-items: center; gap: 18px; margin: 14px 0 4px; }
+.ec-hero canvas { width: 120px; height: 120px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.5); border: 3px solid #ffd34d; background: #1f4e9e; }
+.ec-title { font-size: 2.3rem; line-height: .95; letter-spacing: 2px; margin: 0 0 6px; color: #d8cfa8; text-shadow: 0 3px 0 #000; }
+.ec-title span { color: #ffd34d; }
+.ec-stats { color: #ffd34d; font-weight: 800; font-size: .9rem; margin: 6px 0 0; }
+.ec-menu > .mode-card { width: 100%; max-width: 560px; }
+.ec-modes { display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%; max-width: 560px; }
+.ec-modes .mode-card { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.ec-modes .mode-card .btn { margin-top: auto; }
+.ec-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 560px; }
+.ec-foot .btn { flex: 1; min-width: 180px; }
+.ec-foot .toggle { flex: 1; min-width: 160px; }
+@media (min-width: 900px) {
+  .ec-modes { grid-template-columns: repeat(3, 1fr); max-width: 980px; }
+  .ec-title { font-size: 3rem; }
+  .ec-hero canvas { width: 150px; height: 150px; }
+}
+/* palette kaki */
+body.eclair { --bg: #12160c; --bg2: #1c2213; --card: #2a3220; --muted: #c4c0a0; }
+.ec-modes > * { min-width: 0; }
+.ec-modes .mode-card, .ec-menu > .mode-card { width: 100%; box-sizing: border-box; text-align: left; }
+.ec-modes .seg button { min-width: 0; padding-left: 4px; padding-right: 4px; }
+.ec-hero > div { text-align: left; }
