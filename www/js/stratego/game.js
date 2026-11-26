@@ -70,7 +70,7 @@ export class Stratego {
   }
   _piece(side, id) { return { side, id, revealed: false, moved: false, dropped: false }; }
   get st() { return { board: this.board, hist: this.hist, raids: this.raids }; }
-  stop() { this.running = false; window.removeEventListener('resize', this._onResize); this.hud.controls(null); this.opts?.net?.close(); }
+  stop() { this.drawerEl?.remove(); this.drawerEl = null; this.running = false; window.removeEventListener('resize', this._onResize); this.hud.controls(null); this.opts?.net?.close(); }
   setPaused(p) { this.paused = p; }
 
   // ---------- En ligne ----------
@@ -104,24 +104,101 @@ export class Stratego {
   // ---------- Placement ----------
   _setup(side) {
     for (let i = 0; i < this.G.N; i++) if (this.board[i]?.side === side) this.board[i] = null;
-    for (const c of autoSetup(this.G, side)) this.board[c.i] = this._piece(side, c.id);
-    this.phase = 'setup'; this.setupSide = side; this.viewer = side; this.sel = null;
+    this.phase = 'setup'; this.setupSide = side; this.viewer = side; this.sel = null; this.pick = null;
     this.hud.setChip('Placement');
-    this.hud.toast(`${this.names[side]} : touche deux de tes vignettes pour les échanger`, 2400);
     this._hudScore();
-    const el = this.hud.controls(`<div class="setup-ctl">
-      <div class="setup-tip">${this.G.mode === 'facile' ? 'Astuce : entoure ton drapeau et ton plan de mines' : "Astuce : les cases blanches sont à l'abri des bombardiers"}</div>
-      <div class="setup-btns"><button class="sbtn shuffle" data-a="shuffle"><span>🎲</span>Mélanger</button><button class="sbtn ready" data-a="ready"><span>✅</span>Je suis prêt</button></div>
-    </div>`);
+    this.manual = this.opts.place === 'manuel';
+    if (this.manual) {
+      this.stock = {}; for (const id of army(this.G.mode)) this.stock[id] = (this.stock[id] || 0) + 1;
+      this.hud.toast(`${this.names[side]} : ouvre la réserve à droite et pose tes vignettes`, 2600);
+      this._drawer(true);
+    } else {
+      for (const c of autoSetup(this.G, side)) this.board[c.i] = this._piece(side, c.id);
+      this.hud.toast(`${this.names[side]} : touche deux de tes vignettes pour les échanger`, 2400);
+    }
+    this._setupCtl();
+  }
+  _setupCtl() {
+    const side = this.setupSide, left = this.manual ? Object.values(this.stock).reduce((a, b) => a + b, 0) : 0;
+    const tip = this.manual ? (left ? `Encore ${left} vignette${left > 1 ? 's' : ''} à poser` : 'Tout est posé ! Touche 2 vignettes pour les échanger')
+      : this.G.mode === 'facile' ? 'Astuce : entoure ton drapeau et ton plan de mines' : "Astuce : les cases blanches sont à l'abri des bombardiers";
+    const btns = this.manual
+      ? `<button class="sbtn shuffle" data-a="fill"><span>🎲</span>${left ? 'Compléter' : 'Mélanger'}</button><button class="sbtn shuffle" data-a="clear"><span>🧹</span>Vider</button><button class="sbtn ready" data-a="ready" ${left ? 'disabled' : ''}><span>✅</span>Prêt</button>`
+      : `<button class="sbtn shuffle" data-a="shuffle"><span>🎲</span>Mélanger</button><button class="sbtn ready" data-a="ready"><span>✅</span>Je suis prêt</button>`;
+    const el = this.hud.controls(`<div class="setup-ctl"><div class="setup-tip">${tip}</div><div class="setup-btns">${btns}</div></div>`);
     el.onclick = (e) => {
-      const b = e.target.closest('[data-a]'); if (!b) return; fx.tap();
-      if (b.dataset.a === 'shuffle') this._setup(side);
-      else this._ready();
+      const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; fx.tap();
+      const a = b.dataset.a;
+      if (a === 'shuffle') return this._setup(side);
+      if (a === 'ready') return this._ready();
+      if (a === 'clear') {
+        for (let i = 0; i < this.G.N; i++) { const p = this.board[i]; if (p?.side === side) { this.stock[p.id]++; this.board[i] = null; } }
+      } else if (a === 'fill') {
+        if (!Object.values(this.stock).some((n) => n)) { // tout est posé : on mélange
+          const ids = []; for (let i = 0; i < this.G.N; i++) if (this.board[i]?.side === side) ids.push(i);
+          const vals = ids.map((i) => this.board[i]).sort(() => Math.random() - 0.5);
+          ids.forEach((i, k) => (this.board[i] = vals[k]));
+        } else {
+          const free = this._ownCells().filter((i) => !this.board[i]).sort(() => Math.random() - 0.5);
+          for (const id of Object.keys(this.stock)) while (this.stock[id] > 0) { this.board[free.pop()] = this._piece(side, id); this.stock[id]--; }
+        }
+      }
+      this.sel = null; this.pick = null; this._drawer(); this._setupCtl();
     };
+  }
+  // cases du camp du joueur qui place
+  _ownCells() {
+    const out = [], G = this.G;
+    for (let i = 0; i < G.N; i++) { const y = (i / W) | 0; if (this.setupSide === 0 ? y >= G.H - G.R : y < G.R) out.push(i); }
+    return out;
+  }
+
+  // Réserve (accordéon à droite) pour le placement à la main
+  _drawer(open) {
+    const host = document.getElementById('scr-arena');
+    let d = this.drawerEl;
+    if (!this.manual || this.phase !== 'setup') { d?.remove(); this.drawerEl = null; return; }
+    if (!d) {
+      d = this.drawerEl = document.createElement('div'); d.className = 'sg-drawer'; host.appendChild(d);
+      this.groupsOpen = { off: true };
+      d.onclick = (e) => {
+        if (e.target.closest('.sg-tab')) { fx.tap(); d.classList.toggle('open'); return; }
+        const h = e.target.closest('[data-grp]'); if (h) { fx.tick(); this.groupsOpen[h.dataset.grp] = !this.groupsOpen[h.dataset.grp]; return this._drawer(); }
+        const r = e.target.closest('[data-pid]'); if (!r || !this.stock[r.dataset.pid]) return;
+        fx.tick(); this.pick = r.dataset.pid; this.sel = null;
+        d.classList.remove('open'); this._drawer();
+        this.hud.toast(`${BY_ID[this.pick].name} : touche une case libre de ton camp`, 1300);
+      };
+    }
+    if (open != null) d.classList.toggle('open', open);
+    const A = ARMY[this.setupSide], style = this.opts.pieceStyle;
+    this.thumbs ||= {};
+    const img = (id) => (this.thumbs[id + this.setupSide] ||= portrait(id, { ...A, side: this.setupSide, style }, 72).toDataURL());
+    const GROUPS = [
+      ['off', '🎖️ Officiers et sous-officiers', ['general', 'colonel', 'ltcolonel', 'commandant', 'capitaine', 'lieutenant', 'souslieutenant', 'adjudantchef', 'adjudant', 'sergent', 'caporal']],
+      ['tr', '🪖 Troupes', ['corpsfranc', 'sapeur', 'parachutiste', 'espion']],
+      ['obj', '🚩 Drapeau et plan secret', ['drapeau', 'plan']],
+      ['exp', '💣 Mines et bombes', ['mine', 'bomberet', 'v1']],
+      ['mat', '✈️ Aviation et matériel', ['bombardier', 'dca', 'barrage', 'citerne']],
+    ];
+    const left = Object.values(this.stock).reduce((a, b) => a + b, 0);
+    let h = `<button class="sg-tab"><span>${d.classList.contains('open') ? '▶' : '◀'}</span><b>Réserve</b><i>${left}</i></button><div class="sg-panel"><div class="sg-head">Touche une vignette, puis une case de ton camp</div>`;
+    for (const [k, title, ids] of GROUPS) {
+      const list = ids.filter((id) => this.stock[id] != null);
+      if (!list.length) continue;
+      const n = list.reduce((a, id) => a + this.stock[id], 0);
+      h += `<div class="sg-grp ${this.groupsOpen[k] ? 'on' : ''}"><button class="sg-gh" data-grp="${k}"><span>${title}</span><i>${n}</i><em>${this.groupsOpen[k] ? '▾' : '▸'}</em></button>`;
+      if (this.groupsOpen[k]) h += '<div class="sg-items">' + list.map((id) => {
+        const P = BY_ID[id], c = this.stock[id];
+        return `<button class="sg-it ${c ? '' : 'done'} ${this.pick === id ? 'sel' : ''}" data-pid="${id}"><img src="${img(id)}" alt="">${P.kind === 'fight' ? `<u>${P.r}</u>` : ''}<span>${P.name}<small>${HELP[id] || ''}</small></span><i>×${c}</i></button>`;
+      }).join('') + '</div>';
+      h += '</div>';
+    }
+    d.innerHTML = h + '</div>';
   }
 
   _ready() {
-    this.hud.controls(null); this.sel = null;
+    this.hud.controls(null); this.sel = null; this.pick = null; this.drawerEl?.remove(); this.drawerEl = null;
     if (this.online) {
       const pieces = []; for (let i = 0; i < this.G.N; i++) if (this.board[i]?.side === this.me) pieces.push({ i, id: this.board[i].id });
       this.opts.net.send({ t: 'setup', pieces }); this.myReady = true;
@@ -192,6 +269,7 @@ export class Stratego {
     if (this.phase === 'pass') { fx.tap(); const f = this.passThen; this.passThen = null; f?.(); return; }
     if (this._busy()) return;
     const i = this._cellAt(e); if (i < 0) return;
+    if (this.phase === 'setup' && this.manual) return this._manualTap(i);
     if (this.phase === 'setup') {
       const p = this.board[i]; if (!p || p.side !== this.setupSide) return;
       if (this.sel == null) { this.sel = i; fx.tick(); this.hud.toast(`${BY_ID[p.id].name}${HELP[p.id] ? ' : ' + HELP[p.id] : ''}`, 1100); }
@@ -212,6 +290,24 @@ export class Stratego {
       this.hud.toast(`${BY_ID[p.id].name}${HELP[p.id] ? ' : ' + HELP[p.id] : ''}${mine.length ? '' : ' (ne peut pas bouger)'}`, 1100);
     } else this.sel = null;
     this._ctl();
+  }
+  _manualTap(i) {
+    if (this.drawerEl?.classList.contains('open')) { this.drawerEl.classList.remove('open'); return this._drawer(); }
+    if (!this._ownCells().includes(i)) return;
+    const p = this.board[i];
+    if (this.pick) {
+      if (p) { // on remplace : l'ancienne retourne dans la réserve
+        this.stock[p.id]++;
+      }
+      this.board[i] = this._piece(this.setupSide, this.pick); this.stock[this.pick]--; fx.cushion(0.5);
+      if (!this.stock[this.pick]) { this.pick = null; if (Object.values(this.stock).some((n) => n)) this.drawerEl?.classList.add('open'); }
+    } else if (this.sel != null) {
+      if (this.sel === i) { this.stock[p.id]++; this.board[i] = null; fx.tick(); this.hud.toast('Vignette remise dans la réserve', 900); }
+      else { const a = this.board[this.sel]; this.board[this.sel] = p; this.board[i] = a; fx.cushion(0.5); }
+      this.sel = null;
+    } else if (p) { this.sel = i; fx.tick(); this.hud.toast(`${BY_ID[p.id].name} : touche une case pour la déplacer, ou encore elle pour la retirer`, 1500); }
+    else { this.drawerEl?.classList.add('open'); }
+    this._drawer(); this._setupCtl();
   }
   // un pas normal est préféré à un parachutage sur la même case
   _pick(from, to) {
@@ -540,6 +636,7 @@ export class Stratego {
     if (this.phase === 'setup') {
       g.fillStyle = 'rgba(255,211,77,0.14)';
       g.fillRect(this.ox, this.oy + (this.G.H - this.G.R) * cs, this.bw, this.G.R * cs);
+      if (this.manual && this.pick) for (const i of this._ownCells()) if (!this.board[i]) { const [x, y] = C(i); g.fillStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.arc(x, y, cs * 0.12, 0, Math.PI * 2); g.fill(); }
     }
     if (this.last) for (const i of [this.last.from, this.last.to]) { const [x, y] = C(i); g.fillStyle = 'rgba(255,214,60,0.35)'; g.fillRect(x - cs / 2, y - cs / 2, cs, cs); }
     const focus = this.paraFollow ? this.paraFollow.a.to : this.sel;

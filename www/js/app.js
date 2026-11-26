@@ -331,6 +331,8 @@ const render = {
     $('optRules').style.display = curArena === 'stratego' ? '' : 'none';
     const sru = prof().settings.strategoRules || 'complet';
     $('rulesSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === sru));
+    const spl = prof().settings.strategoPlace || 'auto';
+    $('placeSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === spl));
     $('optGolf').style.display = curArena === 'golfcards' ? '' : 'none';
     $('optOnline').style.display = ONLINE_GAMES.includes(curArena) ? '' : 'none';
     $('optBataille').style.display = curArena === 'bataille' ? '' : 'none';
@@ -469,6 +471,10 @@ $('styleSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
 $('rulesSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
   fx.tap(); $('rulesSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
   const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoRules: b.dataset.s } });
+}));
+$('placeSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
+  fx.tap(); $('placeSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoPlace: b.dataset.s } });
 }));
 // ---------- Jeu en ligne ----------
 const ONLINE_GAMES = ['chess', 'stratego', 'bataille'];
@@ -651,7 +657,7 @@ function startArena(opts) {
   $('btnRetry').style.display = '';
   const p = prof();
   arenaOpts = {
-    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', rules: prof().settings.strategoRules || 'complet', golf: golfCfg(), length: prof().settings.batailleLen || 'normale',
+    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', rules: prof().settings.strategoRules || 'complet', place: prof().settings.strategoPlace || 'auto', golf: golfCfg(), length: prof().settings.batailleLen || 'normale',
     names: opts.names || [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };
