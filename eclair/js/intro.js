@@ -3,13 +3,27 @@
 // puis un éclair dévoile le titre. Touche « Passer » pour aller directement au menu.
 import * as THREE from '../vendor/three.module.js';
 import { buildModel, glowTex } from './stratego/game3d.js';
-import { fx, unlockAudio } from './fx.js';
+import { fx, unlockAudio, audioRunning } from './fx.js';
+import { playMarch } from './march.js';
 
 const V3 = THREE.Vector3;
 const DUR = 9.2;
 const smooth = (a, b, t) => { const k = Math.min(1, Math.max(0, (t - a) / (b - a))); return k * k * (3 - 2 * k); };
 
 export function playIntro(host, onDone, style = 'france') {
+  // le navigateur n'autorise le son qu'après un premier toucher : écran d'accueil si besoin
+  if (!audioRunning()) {
+    host.innerHTML = `<div class="in-gate"><div class="in-bolt">⚡</div><h1>GUERRE<br><span>ÉCLAIR</span></h1><button class="btn primary">▶ Touche pour commencer</button><small>🔊 Monte le son !</small></div>`;
+    host.classList.add('show');
+    host.onpointerdown = null;
+    host.querySelector('.in-gate').onclick = () => { unlockAudio(); setTimeout(() => run(host, onDone, style), 60); };
+    return;
+  }
+  run(host, onDone, style);
+}
+
+function run(host, onDone, style) {
+  let music = null;
   host.innerHTML = `<canvas></canvas>
     <div class="in-flash"></div>
     <div class="in-title"><div class="in-bolt">⚡</div><h1>GUERRE<br><span>ÉCLAIR</span></h1><p>Prends le drapeau et le plan secret</p></div>
@@ -67,8 +81,8 @@ export function playIntro(host, onDone, style = 'france') {
   put('drapeau', 1, 2, -12); put('dca', 1, -4.5, -11);
 
   // bombardiers et bombe volante
-  const planes = [0, 1, 2].map((k) => { const p = buildModel('bombardier', 0, true, style); p.children[0].visible = p.children[1].visible = false; p.children[2].children[0].visible = false; p.scale.setScalar(2.2); p.rotation.y = Math.PI; scene.add(p); return { p, off: k }; });
-  const v1 = buildModel('v1', 0, true, style); v1.children[0].visible = v1.children[1].visible = false; v1.scale.setScalar(2); scene.add(v1);
+  const planes = [0, 1, 2].map((k) => { const p = buildModel('bombardier', 0, true, style, true); p.scale.setScalar(2.2); p.rotation.y = Math.PI; scene.add(p); return { p, off: k }; });
+  const v1 = buildModel('v1', 0, true, style, true); v1.scale.setScalar(2); scene.add(v1);
 
   // explosions
   const glows = [], booms = [];
@@ -97,6 +111,7 @@ export function playIntro(host, onDone, style = 'france') {
     [6.0, () => { fx.slam(); flash.classList.add('on'); title.classList.add('on'); }],
   ];
   let ev = 0, t = 0, last = performance.now(), done = false, raf = 0, shake = 0;
+  music = playMarch();
 
   const resize = () => {
     const w = host.clientWidth, h = host.clientHeight;
@@ -171,7 +186,7 @@ export function playIntro(host, onDone, style = 'france') {
 
   function finish() {
     if (done) return; done = true;
-    cancelAnimationFrame(raf); window.removeEventListener('resize', resize);
+    cancelAnimationFrame(raf); window.removeEventListener('resize', resize); music?.stop();
     host.classList.add('out');
     setTimeout(() => { renderer?.dispose(); host.classList.remove('show', 'out'); host.innerHTML = ''; onDone?.(); }, 450);
   }

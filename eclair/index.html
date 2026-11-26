@@ -17,55 +17,46 @@
 
 <!-- Menu -->
 <section class="screen" id="scr-menu">
-  <div class="center-col ec-menu">
-    <div class="ec-hero">
-      <canvas id="heroArt" width="220" height="220"></canvas>
-      <div>
-        <h1 class="ec-title">GUERRE<br><span>ÉCLAIR</span></h1>
-        <p class="muted small">Le jeu de stratégie militaire aux vignettes cachées</p>
-        <p class="ec-stats" id="stats"></p>
+  <div class="ec-home">
+    <div class="ec-play">
+      <div class="ec-hero">
+        <canvas id="heroArt" width="220" height="220"></canvas>
+        <div>
+          <h1 class="ec-title">GUERRE<br><span>ÉCLAIR</span></h1>
+          <p class="muted small">48 figurines · drapeau · plan secret</p>
+          <p class="ec-stats" id="stats"></p>
+        </div>
       </div>
-    </div>
 
-    <div class="mode-card">
-      <label class="field"><span>Ton nom</span><input id="myName" maxlength="16" autocomplete="off" placeholder="Joueur"></label>
-    </div>
-
-    <div class="mode-card">
-      <h3>Règlement</h3>
-      <div class="seg" id="rulesSeg"><button data-v="complet">🎖️ Complet (48)</button><button data-v="facile">🧒 Facile (36)</button></div>
-      <h3 style="margin-top:12px">Placement des vignettes</h3>
-      <div class="seg" id="placeSeg"><button data-v="auto">🎲 Automatique</button><button data-v="manuel">✋ À la main</button></div>
-      <h3 style="margin-top:12px">Dessins des vignettes</h3>
-      <div class="seg" id="styleSeg"><button data-v="moderne">🪖 Moderne</button><button data-v="france">🇫🇷 France 1914</button></div>
-      <h3 style="margin-top:12px">Affichage du plateau</h3>
-      <div class="seg" id="viewSeg"><button data-v="3d">🧊 3D (figurines)</button><button data-v="2d">🗺️ 2D (vignettes)</button></div>
-    </div>
-
-    <div class="ec-modes">
       <div class="mode-card">
-        <h3>🤖 Contre l'ordi</h3>
-        <div class="seg" id="levelSeg"><button data-v="facile">Facile</button><button data-v="moyen">Moyen</button><button data-v="difficile">Difficile</button></div>
-        <button class="btn primary" id="btnVsAI">Jouer</button>
+        <label class="field"><span>Ton nom</span><input id="myName" maxlength="16" autocomplete="off" placeholder="Joueur"></label>
+        <h3>Placement des figurines</h3>
+        <div class="seg" id="placeSeg"><button data-v="auto">🎲 Automatique</button><button data-v="manuel">✋ À la main</button></div>
       </div>
-      <div class="mode-card">
-        <h3>👥 À deux sur cet appareil</h3>
-        <label class="field"><span>Nom du joueur 2</span><input id="p2Name" maxlength="16" autocomplete="off" placeholder="Joueur 2"></label>
-        <button class="btn ghost" id="btnDuo">Jouer à deux</button>
+
+      <button class="ec-big" id="btnVsAI"><span>🤖</span><b>Contre l'ordi</b><small>Une partie seul contre l'ordinateur</small></button>
+
+      <div class="ec-card2">
+        <div class="ec-big-head"><span>👥</span><b>À deux</b><small>Sur le même écran, chacun son tour</small></div>
+        <div class="join-row"><input id="p2Name" maxlength="16" autocomplete="off" placeholder="Nom du joueur 2"><button class="btn primary" id="btnDuo">Jouer</button></div>
       </div>
-      <div class="mode-card">
-        <h3>🌐 En ligne avec un ami</h3>
-        <p class="muted small">Chacun sur son appareil (téléphone ou ordinateur). L'un crée la partie, l'autre tape le code.</p>
+
+      <div class="ec-card2">
+        <div class="ec-big-head"><span>🌐</span><b>En ligne</b><small>Chacun sur son appareil, avec un code</small></div>
         <button class="btn primary" id="btnHost">Créer une partie</button>
         <div class="join-row"><input id="joinCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn ghost" id="btnJoin">Rejoindre</button></div>
       </div>
+
+      <div class="ec-foot">
+        <label class="toggle"><span>🔊 Sons</span><input type="checkbox" id="setSound" checked><i></i></label>
+        <button class="btn ghost" id="btnIntro">🎬 Revoir l'intro</button>
+      </div>
     </div>
 
-    <div class="ec-foot">
-      <button class="btn ghost" id="btnRules">❓ Règles du jeu</button>
-      <button class="btn ghost" id="btnIntro">🎬 Revoir l'intro</button>
-      <label class="toggle"><span>🔊 Sons</span><input type="checkbox" id="setSound" checked><i></i></label>
-    </div>
+    <aside class="ec-guide">
+      <h2 class="gd-head">📖 Règles du jeu</h2>
+      <div id="guide"><p class="muted">Chargement des figurines…</p></div>
+    </aside>
   </div>
 </section>
 
@@ -107,14 +98,10 @@
   </div>
 </div>
 
-<div class="modal tuto" id="mdTuto">
-  <div class="card">
-    <div class="tuto-head"><span class="tuto-game"></span><button class="tuto-skip" data-t="skip">Passer</button></div>
-    <div class="tuto-art"></div>
-    <h2 class="tuto-title"></h2>
-    <p class="tuto-text"></p>
-    <div class="tuto-dots"></div>
-    <div class="tuto-nav"><button class="btn ghost" data-t="prev">Précédent</button><button class="btn primary" data-t="next">Suivant</button></div>
+<div class="modal" id="mdRules">
+  <div class="card ec-rules-card">
+    <div class="ec-rules-top"><h2>📖 Règles du jeu</h2><button class="icon-btn" id="btnRulesClose" aria-label="Fermer">✕</button></div>
+    <div class="ec-guide in-modal" id="guide2"></div>
   </div>
 </div>
 

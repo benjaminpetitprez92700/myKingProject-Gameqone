@@ -3,7 +3,7 @@ import { Stratego } from './stratego/game.js';
 import { Stratego3D } from './stratego/game3d.js';
 import { portrait } from './stratego/art.js';
 import { hostGame, joinGame } from './net.js';
-import { showTutorial } from './tutorial.js';
+import { guideHTML } from './guide.js';
 import { playIntro } from './intro.js';
 import { fx, setPrefs, unlockAudio, audio } from './fx.js';
 
@@ -26,7 +26,7 @@ function seg(id, key) {
   el.onclick = (e) => { const b = e.target.closest('button'); if (!b) return; fx.tap(); S[key] = b.dataset.v; save(); paint(); };
   paint();
 }
-seg('rulesSeg', 'rules'); seg('placeSeg', 'place'); seg('styleSeg', 'style'); seg('levelSeg', 'level'); seg('viewSeg', 'view');
+seg('placeSeg', 'place');
 $('myName').value = S.name; $('p2Name').value = S.p2;
 $('myName').oninput = (e) => { S.name = e.target.value.trim(); save(); };
 $('p2Name').oninput = (e) => { S.p2 = e.target.value.trim(); save(); };
@@ -46,12 +46,14 @@ renderStats();
 function drawHero() {
   try {
     const c = $('heroArt'), g = c.getContext('2d');
-    const img = portrait('general', { main: '#1f4e9e', dark: '#0f2a5a', light: '#4f86d9', side: 1, style: S.style }, 220);
+    const img = portrait('general', { main: '#1f4e9e', dark: '#0f2a5a', light: '#4f86d9', side: 1, style: 'france' }, 220);
     g.clearRect(0, 0, 220, 220); g.drawImage(img, 0, 0, 220, 220);
   } catch (e) {}
 }
 drawHero();
-$('styleSeg').addEventListener('click', () => setTimeout(drawHero));
+// règles + fiches des figurines (portraits 3D calculés après l'affichage)
+let guide = '';
+setTimeout(() => { guide = guideHTML(); $('guide').innerHTML = guide; }, 50);
 
 const openModal = (id) => $(id).classList.add('show');
 const closeModal = (id) => $(id).classList.remove('show');
@@ -90,7 +92,7 @@ function watchSize(el) {
 function startGame(o) {
   unlockAudio();
   opts = {
-    ...o, game: 'stratego', pieceStyle: S.style, rules: S.rules, place: S.place,
+    ...o, game: 'stratego', pieceStyle: 'france', rules: 'complet', place: S.place, level: 'moyen',
     names: o.names || [myName(), o.mode === 'ai' ? 'Ordi' : (S.p2 || 'Joueur 2')],
     colors: ['#3a86ff', '#ff006e'], color: '#3a86ff',
   };
@@ -98,13 +100,12 @@ function startGame(o) {
   closeModal('mdResult'); closeModal('mdPause');
   hud.controls(null);
   game?.stop();
-  let G3 = S.view !== '2d';
+  let G3 = true;
   if (G3) { try { const t = document.createElement('canvas'); G3 = !!(t.getContext('webgl2') || t.getContext('webgl')); } catch (e) { G3 = false; } }
   document.body.classList.toggle('view3d', G3);
   game = G3 ? new Stratego3D($('arena'), hud) : new Stratego($('arena'), hud);
   game.start(opts); window.__eg = game;
   watchSize($('arena'));
-  if (!S.tuto) { S.tuto = true; save(); help(); }
 }
 function quit() {
   closeModal('mdPause'); closeModal('mdResult');
@@ -113,9 +114,15 @@ function quit() {
 }
 function pause() { if (!game) return; game.setPaused(true); openModal('mdPause'); }
 function resume() { closeModal('mdPause'); game?.setPaused(false); }
+function rules(onClose) {
+  $('guide2').innerHTML = guide || guideHTML(); $('guide2').scrollTop = 0;
+  openModal('mdRules'); rulesClose = onClose;
+}
+let rulesClose = null;
+$('btnRulesClose').onclick = () => { fx.tap(); closeModal('mdRules'); const f = rulesClose; rulesClose = null; f?.(); };
 function help() {
   const was = !!game?.paused; game?.setPaused(true);
-  showTutorial('stratego', () => { if (!was) game?.setPaused(false); });
+  rules(() => { if (!was) game?.setPaused(false); });
 }
 
 function showResult(r) {
@@ -129,13 +136,12 @@ function showResult(r) {
   openModal('mdResult');
 }
 
-$('btnVsAI').onclick = () => { fx.tap(); startGame({ mode: 'ai', level: S.level }); };
-$('btnDuo').onclick = () => { fx.tap(); startGame({ mode: 'duo', level: S.level, p2: S.p2 || 'Joueur 2' }); };
-$('btnRules').onclick = () => { fx.tap(); showTutorial('stratego'); };
+$('btnVsAI').onclick = () => { fx.tap(); startGame({ mode: 'ai' }); };
+$('btnDuo').onclick = () => { fx.tap(); startGame({ mode: 'duo', p2: S.p2 || 'Joueur 2' }); };
 $('btnPause').onclick = () => { fx.tap(); pause(); };
 $('btnView').onclick = () => { fx.tap(); game?.resetView?.(); };
 $('btnHelp').onclick = () => { fx.tap(); help(); };
-$('btnHelpPause').onclick = () => { fx.tap(); showTutorial('stratego'); };
+$('btnHelpPause').onclick = () => { fx.tap(); closeModal('mdPause'); rules(() => openModal('mdPause')); };
 $('btnResume').onclick = () => { fx.tap(); resume(); };
 $('btnRestart').onclick = () => { fx.tap(); if (opts.mode === 'online') return hud.toast('Impossible en ligne', 1400); startGame(opts); };
 $('btnQuit').onclick = () => { fx.tap(); quit(); };
@@ -146,7 +152,7 @@ $('btnMenu').onclick = () => { fx.tap(); quit(); };
 let req = null;
 function onlineModal(title, code, text) { $('onTitle').textContent = title; $('onCode').textContent = code; $('onText').textContent = text; $('onCancel').textContent = 'Annuler'; openModal('mdOnline'); }
 const onlineFail = (m) => { req = null; $('onCode').textContent = '⚠️'; $('onText').textContent = m; $('onCancel').textContent = 'Fermer'; };
-function startOnline(link, side, names) { closeModal('mdOnline'); req = null; startGame({ mode: 'online', net: link, side, level: S.level, names }); }
+function startOnline(link, side, names) { closeModal('mdOnline'); req = null; startGame({ mode: 'online', net: link, side, names }); }
 $('btnHost').onclick = async () => {
   fx.tap(); onlineModal('Créer une partie', '…', 'Connexion au serveur…');
   const me = myName();
@@ -167,7 +173,7 @@ $('joinCode').oninput = (e) => { e.target.value = e.target.value.toUpperCase().r
 $('onCancel').onclick = () => { fx.tap(); req?.cancel(); req = null; closeModal('mdOnline'); };
 
 // ---------- Animation d'arrivée ----------
-function intro() { show(''); playIntro($('intro'), () => show('scr-menu'), S.style); }
+function intro() { show(''); playIntro($('intro'), () => show('scr-menu'), 'france'); }
 $('btnIntro').onclick = () => { fx.tap(); intro(); };
 if (new URLSearchParams(location.search).has('nointro')) show('scr-menu'); else intro();
 

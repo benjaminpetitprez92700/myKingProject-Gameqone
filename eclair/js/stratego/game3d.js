@@ -1,6 +1,7 @@
 // Guerre Éclair en 3D : même règles, même ordi, mais un plateau en relief avec de vraies figurines
 // (soldats, avions, bombes…). On tourne la vue en glissant le doigt, on zoome en pinçant (ou à la molette).
 import * as THREE from '../../vendor/three.module.js';
+import { mergeGeometries } from '../../vendor/BufferGeometryUtils.js';
 import { Stratego, ARMY } from './game.js';
 import { W, BY_ID, xy, isCross, isDark, v1Path } from './rules.js';
 
@@ -99,10 +100,10 @@ function sword(g) {
 }
 function backpack(g, A) { add(g, box(0.2, 0.2, 0.08), mat(A.dark), 0, 0.42, -0.15); add(g, cyl(0.04, 0.04, 0.2, 8), mat('#d8cfa8'), 0, 0.55, -0.15, 0, 0, Math.PI / 2); }
 
-function plane(g, A) {
+function plane(g, A, bare) {
   const body = mat(A.main, { r: 0.45, m: 0.25 }), light = mat(A.light, { r: 0.45, m: 0.2 });
-  add(g, cyl(0.025, 0.025, 0.3, 6), mat(DARKSTEEL), 0, 0.2, 0); // mât de présentation
-  const p = new THREE.Group(); p.position.y = 0.4; g.add(p);
+  if (!bare) add(g, cyl(0.025, 0.025, 0.3, 6), mat(DARKSTEEL), 0, 0.2, 0); // mât de présentation
+  const p = new THREE.Group(); p.position.y = 0.4; p.name = 'hover'; g.add(p);
   add(p, cyl(0.07, 0.05, 0.62, 14), body, 0, 0, 0, Math.PI / 2, 0, 0);
   add(p, cone(0.07, 0.1, 14), mat(DARKSTEEL, { m: 0.6 }), 0, 0, 0.36, Math.PI / 2, 0, 0);
   add(p, box(0.86, 0.025, 0.17), light, 0, 0.0, 0.04);
@@ -118,11 +119,10 @@ function plane(g, A) {
   add(p, cyl(0.03, 0.03, 0.12, 8), mat('#2b2b2b'), 0.1, -0.06, 0.05, Math.PI / 2, 0, 0);
   const props = [];
   for (const x of [-0.24, 0.24]) {
-    const pr = new THREE.Group(); pr.position.set(x, -0.03, 0.19); p.add(pr);
+    const pr = new THREE.Group(); pr.name = 'prop'; pr.position.set(x, -0.03, 0.19); p.add(pr);
     add(pr, box(0.22, 0.025, 0.01), mat('#222'), 0, 0, 0); add(pr, box(0.025, 0.22, 0.01), mat('#222'), 0, 0, 0);
     props.push(pr);
   }
-  g.userData.props = props; g.userData.hover = p;
 }
 function rocket(g, A, onRamp = true) {
   if (onRamp) {
@@ -147,19 +147,17 @@ function bomb(g, A) {
   add(g, sph(0.19, 18), mat('#1f1f22', { r: 0.35, m: 0.4 }), 0, 0.27, 0);
   add(g, cyl(0.05, 0.05, 0.06, 10), mat(STEEL, { m: 0.7 }), 0, 0.47, 0);
   const f = add(g, cyl(0.012, 0.012, 0.14, 6), mat('#c9a66b'), 0.04, 0.54, 0, 0, 0, -0.5);
-  add(g, sph(0.03, 8), mat('#ffb703', { e: '#ff7b00', ei: 1.2 }), 0.08, 0.6, 0); f.userData = {};
+  add(g, sph(0.03, 8), mat('#ffb703', { e: '#ff7b00', ei: 1.2 }), 0.08, 0.6, 0);
   add(g, cyl(0.09, 0.09, 0.02, 18), mat('#fff'), 0, 0.29, 0.18, Math.PI / 2, 0, 0); // cadran
   add(g, box(0.012, 0.07, 0.01), mat('#111'), 0, 0.31, 0.195); add(g, box(0.05, 0.012, 0.01), mat('#111'), 0.02, 0.29, 0.195);
-  g.userData.fuse = g.children[g.children.length - 5];
 }
 function dca(g, A) {
   add(g, cyl(0.26, 0.3, 0.1, 18), mat('#5a6340', { r: 0.6 }), 0, 0.13, 0);
-  const t = new THREE.Group(); t.position.y = 0.2; g.add(t);
+  const t = new THREE.Group(); t.position.y = 0.2; t.name = 'turret'; g.add(t);
   add(t, box(0.24, 0.14, 0.24), mat(A.main, { m: 0.2 }), 0, 0.06, 0);
   add(t, box(0.3, 0.05, 0.05), mat(DARKSTEEL), 0, 0.12, 0);
   for (const x of [-0.05, 0.05]) add(t, cyl(0.022, 0.026, 0.5, 8), mat(DARKSTEEL, { m: 0.6, r: 0.35 }), x, 0.3, 0.14, 0.75, 0, 0);
   add(t, box(0.2, 0.12, 0.02), mat('#4c5434'), 0, 0.16, 0.13, 0.2, 0, 0); // bouclier
-  g.userData.turret = t;
 }
 function truck(g, A) {
   const wheel = mat('#1c1c1c', { r: 0.8 });
@@ -172,11 +170,11 @@ function truck(g, A) {
 }
 function magnet(g, A) {
   add(g, box(0.08, 0.3, 0.08), mat(DARKSTEEL, { m: 0.5 }), 0, 0.22, 0);
-  const m = new THREE.Group(); m.position.y = 0.48; g.add(m);
+  const m = new THREE.Group(); m.position.y = 0.48; m.name = 'spin'; g.add(m);
   const tor = add(m, geo('magnet', () => new THREE.TorusGeometry(0.14, 0.055, 10, 20, Math.PI)), mat('#d62828', { r: 0.4, m: 0.2 }), 0, 0, 0, 0, 0, Math.PI);
   add(m, box(0.11, 0.08, 0.11), mat('#d9dde2', { m: 0.8, r: 0.25 }), -0.14, 0.04, 0);
   add(m, box(0.11, 0.08, 0.11), mat('#d9dde2', { m: 0.8, r: 0.25 }), 0.14, 0.04, 0);
-  tor.position.y = 0.0; g.userData.spin = m;
+  tor.position.y = 0.0;
 }
 function flag(g, A) {
   add(g, cyl(0.12, 0.16, 0.08, 14), mat('#6b5a3a'), 0, 0.12, 0);
@@ -185,9 +183,8 @@ function flag(g, A) {
   const f = new THREE.Group(); f.position.set(-0.1, 0.83, 0); g.add(f);
   const cloth = geo('flagcloth', () => new THREE.PlaneGeometry(0.4, 0.26, 10, 4));
   const fm = new THREE.MeshStandardMaterial({ color: A.main, side: THREE.DoubleSide, roughness: 0.8 });
-  const c = new THREE.Mesh(cloth.clone(), fm); c.position.x = 0.2; c.castShadow = true; f.add(c);
+  const c = new THREE.Mesh(cloth.clone(), fm); c.position.x = 0.2; c.castShadow = true; c.name = 'cloth'; f.add(c);
   const s = new THREE.Mesh(geo('flagstripe', () => new THREE.PlaneGeometry(0.4, 0.06, 10, 1)), mat('#fff', { r: 0.8 })); s.material = new THREE.MeshStandardMaterial({ color: '#fff', side: THREE.DoubleSide }); s.position.set(0.2, 0, 0.002); f.add(s);
-  g.userData.cloth = c;
 }
 function secretPlan(g, A) {
   add(g, box(0.5, 0.04, 0.38), mat(WOOD), 0, 0.3, 0);
@@ -227,9 +224,54 @@ const RANK_LOOK = {
   espion: { hat: HAT.fedora, coat: '#4a4038', trench: true },
 };
 
-export function buildModel(id, side, faceUp, style) {
+const VCMAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0.12 });
+const ANIM = new Set(['prop', 'hover', 'turret', 'spin', 'cloth']);
+// fusionne les morceaux immobiles par matériau : quelques objets par figurine au lieu de vingt
+function optimize(root) {
+  root.updateMatrixWorld(true);
+  const byMat = new Map(), drop = [];
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    for (let a = o; a && a !== root; a = a.parent) if (ANIM.has(a.name)) return;
+    const gg = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
+    gg.applyMatrix4(o.matrixWorld);
+    for (const k of Object.keys(gg.attributes)) if (!['position', 'normal', 'uv'].includes(k)) gg.deleteAttribute(k);
+    if (!gg.attributes.uv) gg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(gg.attributes.position.count * 2), 2));
+    const g2 = gg.index ? gg.toNonIndexed() : gg;
+    // une seule matière à couleurs par sommet pour tout ce qui ne brille pas : un seul objet à dessiner
+    const glow = o.material.emissive && o.material.emissive.getHex() !== 0;
+    const key = glow ? o.material : VCMAT;
+    const n = g2.attributes.position.count, col = new Float32Array(n * 3), c = o.material.color;
+    for (let v = 0; v < n; v++) { col[v * 3] = c.r; col[v * 3 + 1] = c.g; col[v * 3 + 2] = c.b; }
+    g2.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    if (!byMat.has(key)) byMat.set(key, []);
+    byMat.get(key).push(g2); drop.push(o);
+  });
+  for (const o of drop) o.parent.remove(o);
+  for (const [m, list] of byMat) {
+    const merged = mergeGeometries(list, false); if (!merged) continue;
+    if (m !== VCMAT) merged.deleteAttribute('color');
+    const mesh = new THREE.Mesh(merged, m); mesh.castShadow = true; mesh.receiveShadow = true; root.add(mesh);
+  }
+  return root;
+}
+const tplCache = new Map();
+export function buildModel(id, side, faceUp, style, bare = false) {
+  const key = `${id}|${side}|${faceUp ? 1 : 0}|${style}|${bare ? 1 : 0}`;
+  let tpl = tplCache.get(key);
+  if (!tpl) { tpl = optimize(rawModel(id, side, faceUp, style, bare)); tplCache.set(key, tpl); }
+  const g = tpl.clone();
+  const u = g.userData = { head: tpl.userData.head, props: [] };
+  g.traverse((o) => {
+    if (o.name === 'prop') u.props.push(o);
+    else if (o.name === 'cloth') { o.geometry = o.geometry.clone(); u.cloth = o; }
+    else if (ANIM.has(o.name)) u[o.name] = o;
+  });
+  return g;
+}
+function rawModel(id, side, faceUp, style, bare) {
   const root = new THREE.Group(), A = ARMY[side];
-  socle(root, A);
+  if (!bare) socle(root, A);
   const g = new THREE.Group(); g.position.y = 0.06; g.scale.setScalar(1.28); root.add(g);
   let head = 0.8;
   if (!faceUp) hidden(g, A);
@@ -241,8 +283,7 @@ export function buildModel(id, side, faceUp, style) {
     if (style !== 'moderne' && o.hat === HAT.helmet && !L.helmet) o.helmet = '#7d8ea3'; // bleu horizon
     head = soldier(g, A, o);
     L.extra?.(g, A);
-  } else ({ bombardier: plane, v1: rocket, mine, bomberet: bomb, dca, citerne: truck, barrage: magnet, drapeau: flag, plan: secretPlan })[id]?.(g, A);
-  Object.assign(root.userData, g.userData);
+  } else ({ bombardier: plane, v1: rocket, mine, bomberet: bomb, dca, citerne: truck, barrage: magnet, drapeau: flag, plan: secretPlan })[id]?.(g, A, bare);
   root.userData.head = 0.06 + head * 1.28;
   return root;
 }
@@ -286,7 +327,8 @@ export class Stratego3D extends Stratego {
     s.add(new THREE.HemisphereLight('#e8eeff', '#4a4030', 1.6));
     const sun = this.sun = new THREE.DirectionalLight('#fff3dc', 2.2);
     sun.position.set(-5, 12, 7); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.02;
+    this.mobile = matchMedia('(pointer: coarse)').matches;
+    sun.shadow.mapSize.set(this.mobile ? 1024 : 2048, this.mobile ? 1024 : 2048); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.02;
     Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
     s.add(sun);
     this.cam = new THREE.PerspectiveCamera(38, 1, 0.1, 600);
@@ -299,11 +341,34 @@ export class Stratego3D extends Stratego {
     canvas.addEventListener('pointermove', (e) => this._gMove(e));
     canvas.addEventListener('pointerup', (e) => this._gUp(e));
     canvas.addEventListener('pointercancel', (e) => { this.ptrs.delete(e.pointerId); this.g0 = null; });
-    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.zoom = Math.min(4, Math.max(0.7, this.zoom * Math.exp(-e.deltaY * 0.0015))); }, { passive: false });
+    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this._zoomAt(this.T.zoom * Math.exp(-e.deltaY * 0.0016), e.clientX, e.clientY); }, { passive: false });
+    canvas.addEventListener('dblclick', () => this.resetView(true));
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  resetView() { this.yaw = 0; this.pitch = null; this.zoom = 1; this.pan = new V3(); this.curFit = null; }
+  // T = vue voulue (doigts, molette) ; yaw/pitch/zoom/pan = vue affichée, qui la rejoint en douceur
+  resetView(soft = false) {
+    this.T = { yaw: 0, pitch: null, zoom: 1, pan: new V3() };
+    if (!soft) { this.yaw = 0; this.pitch = null; this.zoom = 1; this.pan = new V3(); this.curFit = null; this.fitKey = ''; }
+  }
+  _ground(cx, cy) {
+    const r = this.gl.getBoundingClientRect(), p = new V3();
+    this.ray.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), this.cam);
+    return this.ray.ray.intersectPlane(new THREE.Plane(new V3(0, 1, 0), 0), p) ? p : null;
+  }
+  // zoom vers le point visé (souris ou milieu des deux doigts)
+  _zoomAt(z, cx, cy, base = this.T.pan, z0 = this.T.zoom) {
+    z = Math.min(4.5, Math.max(0.75, z));
+    const g = cx != null && this._ground(cx, cy);
+    if (g) { const k = 1 - z0 / z; this.T.pan = this._clampPan(base.clone().add(new V3(g.x - base.x, 0, g.z - base.z).multiplyScalar(k))); }
+    this.T.zoom = z;
+  }
+  _clampPan(p) {
+    const G = this.G; if (!G) return p;
+    const lim = Math.max(0, 1 - 1 / this.T.zoom) + 0.15;
+    p.x = Math.max(-W / 2 * lim, Math.min(W / 2 * lim, p.x)); p.z = Math.max(-G.H / 2 * lim, Math.min(G.H / 2 * lim, p.z)); p.y = 0;
+    return p;
+  }
 
   // marges réservées aux panneaux posés sur les côtés
   _margins() {
@@ -320,7 +385,7 @@ export class Stratego3D extends Stratego {
   resize() {
     super.resize();
     if (!this.renderer || this.vw < 50) return;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.mobile ? 1.6 : 2));
     this.renderer.setSize(this.vw, this.vh, false);
     this.cam.aspect = this.vw / this.vh;
     this.cam.updateProjectionMatrix();
@@ -340,10 +405,10 @@ export class Stratego3D extends Stratego {
   _tap(e) {
     this.canvas.setPointerCapture?.(e.pointerId);
     this.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (this.ptrs.size === 1) this.g0 = { x: e.clientX, y: e.clientY, moved: false, yaw: this.yaw, pitch: this.pitch, pan: this.pan.clone(), btn: e.button, shift: e.shiftKey };
+    if (this.ptrs.size === 1) this.g0 = { x: e.clientX, y: e.clientY, moved: false, yaw: this.T.yaw, pitch: this.T.pitch ?? this.pitch, pan: this.T.pan.clone(), btn: e.button, shift: e.shiftKey, lx: e.clientX, ly: e.clientY };
     else if (this.ptrs.size === 2) {
       const [a, b] = [...this.ptrs.values()];
-      this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: this.zoom, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, pan: this.pan.clone() };
+      this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), yaw: this.T.yaw, zoom: this.T.zoom, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, pan: this.T.pan.clone() };
       if (this.g0) this.g0.moved = true;
     }
   }
@@ -352,9 +417,7 @@ export class Stratego3D extends Stratego {
     const yaw = this._yawTotal();
     const right = new V3(Math.cos(yaw), 0, -Math.sin(yaw)), fwd = new V3(-Math.sin(yaw), 0, -Math.cos(yaw));
     const p = base.clone().addScaledVector(right, -dx * k).addScaledVector(fwd, dy * k / Math.max(0.4, Math.sin(this.pitch)));
-    const G = this.G; if (!G) return p;
-    p.x = Math.max(-W / 2, Math.min(W / 2, p.x)); p.z = Math.max(-G.H / 2, Math.min(G.H / 2, p.z));
-    return p;
+    return this._clampPan(p);
   }
   _gMove(e) {
     if (!this.ptrs.has(e.pointerId)) return;
@@ -362,16 +425,20 @@ export class Stratego3D extends Stratego {
     if (this.ptrs.size >= 2 && this.pinch) {
       const [a, b] = [...this.ptrs.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
-      this.zoom = Math.min(4, Math.max(0.7, this.pinch.zoom * (d / Math.max(20, this.pinch.d))));
-      this.pan = this._panBy(this.pinch.pan, (a.x + b.x) / 2 - this.pinch.mx, (a.y + b.y) / 2 - this.pinch.my);
+      const P = this.pinch, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      this.T.pan = this._panBy(P.pan, mx - P.mx, my - P.my);
+      this._zoomAt(P.zoom * (d / Math.max(20, P.d)), mx, my, this.T.pan, P.zoom);
+      // tourner avec deux doigts
+      let da = Math.atan2(b.y - a.y, b.x - a.x) - P.ang; da = Math.atan2(Math.sin(da), Math.cos(da));
+      this.T.yaw = P.yaw + da;
       return;
     }
     const g = this.g0; if (!g) return;
     const dx = e.clientX - g.x, dy = e.clientY - g.y;
     if (!g.moved && Math.hypot(dx, dy) > 8) g.moved = true;
     if (!g.moved) return;
-    if (g.btn === 2 || g.shift) this.pan = this._panBy(g.pan, dx, dy);
-    else { this.yaw = g.yaw - dx * 0.008; this.pitch = Math.min(1.45, Math.max(0.42, g.pitch + dy * 0.005)); }
+    if (g.btn === 2 || g.shift) this.T.pan = this._panBy(g.pan, dx, dy);
+    else { this.T.yaw = g.yaw - dx * 0.007; this.T.pitch = Math.min(1.5, Math.max(0.38, g.pitch + dy * 0.0045)); }
   }
   _gUp(e) {
     const had = this.ptrs.has(e.pointerId);
@@ -409,24 +476,26 @@ export class Stratego3D extends Stratego {
     this.boardMode = G.mode;
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color: '#25301a', roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.36; ground.receiveShadow = true; root.add(ground);
-    const frame = add(root, new THREE.BoxGeometry(W + 0.7, 0.32, G.H + 0.7), mat('#4a3520', { r: 0.7 }), 0, -0.2, 0);
+    const tb = new THREE.Group();
+    const frame = add(tb, new THREE.BoxGeometry(W + 0.7, 0.32, G.H + 0.7), mat('#4a3520', { r: 0.7 }), 0, -0.2, 0);
     frame.castShadow = false;
-    add(root, new THREE.BoxGeometry(W + 0.2, 0.06, G.H + 0.2), mat('#2a1d10'), 0, -0.04, 0).castShadow = false;
+    add(tb, new THREE.BoxGeometry(W + 0.2, 0.06, G.H + 0.2), mat('#2a1d10'), 0, -0.04, 0).castShadow = false;
     const light = mat('#d8cfa8', { r: 0.85 }), darkM = mat('#4a5733', { r: 0.9 }), red = mat('#7d1b14', { r: 0.8 }), cream = mat('#f3e6c8', { r: 0.6 });
     const tileG = box(0.97, 0.06, 0.97);
     for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
       const cx = x - W / 2 + 0.5, cz = y - G.H / 2 + 0.5;
       if (isCross(G, x, y)) {
-        add(root, tileG, red, cx, -0.03, cz).castShadow = false;
+        add(tb, tileG, red, cx, -0.03, cz).castShadow = false;
         // chevaux de frise : deux poutres croisées
-        add(root, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, Math.PI / 4, 0);
-        add(root, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, -Math.PI / 4, 0);
+        add(tb, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, Math.PI / 4, 0);
+        add(tb, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, -Math.PI / 4, 0);
         continue;
       }
-      add(root, tileG, isDark(x, y) ? darkM : light, cx, -0.03, cz).castShadow = false;
+      add(tb, tileG, isDark(x, y) ? darkM : light, cx, -0.03, cz).castShadow = false;
     }
     // ligne de front (pointillés)
-    for (let x = 0; x < W * 2; x++) add(root, box(0.3, 0.012, 0.035), mat('#a01e14'), -W / 2 + 0.25 + x * 0.5, 0.002, 0).castShadow = false;
+    for (let x = 0; x < W * 2; x++) add(tb, box(0.3, 0.012, 0.035), mat('#a01e14'), -W / 2 + 0.25 + x * 0.5, 0.002, 0).castShadow = false;
+    optimize(tb); tb.traverse((o) => { o.castShadow = false; }); root.add(tb);
     // zone de placement
     const zm = new THREE.MeshBasicMaterial({ color: '#ffd34d', transparent: true, opacity: 0.16, depthWrite: false });
     this.zone = new THREE.Mesh(new THREE.PlaneGeometry(W, G.R), zm); this.zone.rotation.x = -Math.PI / 2; root.add(this.zone);
@@ -532,10 +601,21 @@ export class Stratego3D extends Stratego {
     const now = performance.now(), dt = Math.min(0.05, (now - (this._t3 || now)) / 1000); this._t3 = now;
 
     // caméra (ajustée en douceur quand les panneaux changent) ; en hauteur, vue plus plongeante
-    if (this.pitch == null) this.pitch = this.vh > this.vw ? 1.2 : 0.98;
-    const f = this._fit();
+    const pitch0 = this.vh > this.vw ? 1.2 : 0.98;
+    if (this.T.pitch == null) this.T.pitch = pitch0;
+    if (this.pitch == null) this.pitch = this.T.pitch;
+    const sm = 1 - Math.exp(-dt * 11);
+    let dy = this.T.yaw - this.yaw;
+    this.yaw += dy * sm; this.pitch += (this.T.pitch - this.pitch) * sm;
+    this.zoom *= Math.pow(this.T.zoom / this.zoom, sm); this.pan.lerp(this.T.pan, sm);
+    const m0 = this._margins(), fk = [this.vw, this.vh, m0.l, m0.r, m0.t, m0.b, this.G.mode, pitch0].join();
+    if (fk !== this.fitKey) {
+      const save = [this.yaw, this.pitch]; this.yaw = 0; this.pitch = pitch0;
+      this.fitT = this._fit(); this.fitKey = fk; [this.yaw, this.pitch] = save;
+    }
+    const f = this.fitT;
     if (!this.curFit) this.curFit = { ...f };
-    const k = Math.min(1, dt * 8);
+    const k = 1 - Math.exp(-dt * 8);
     for (const key of ['d', 'ox', 'oy']) this.curFit[key] += (f[key] - this.curFit[key]) * k;
     this.camDist = this.curFit.d / this.zoom;
     this._placeCamera(this.camDist, this.pan);
@@ -594,7 +674,7 @@ export class Stratego3D extends Stratego {
       const p0 = this._pos(c.from), p1 = this._pos(c.to);
       if (c.raid) {
         // l'avion décolle et survole la cible
-        if (!this.flyer || this.flyer.userData.side !== c.a.side) { if (this.flyer) this.scene.remove(this.flyer); this.flyer = buildModel('bombardier', c.a.side, true, this.opts.pieceStyle); this.flyer.userData.side = c.a.side; this.flyer.children[0].visible = this.flyer.children[1].visible = false; this.flyer.children[2].children[0].visible = false; this.scene.add(this.flyer); }
+        if (!this.flyer || this.flyer.userData.side !== c.a.side) { if (this.flyer) this.scene.remove(this.flyer); this.flyer = buildModel('bombardier', c.a.side, true, this.opts.pieceStyle, true); this.flyer.userData.side = c.a.side; this.scene.add(this.flyer); }
         const kk = ease(c.t / 0.9);
         this.flyer.visible = true; this.flyer.position.lerpVectors(p0, p1, kk); this.flyer.position.y = 0.4 + Math.sin(Math.min(1, c.t / 0.9) * Math.PI) * 1.6 + 0.6;
         this.flyer.lookAt(p1.x, this.flyer.position.y, p1.z); if (p0.distanceTo(p1) < 0.01) this.flyer.rotation.set(0, 0, 0);

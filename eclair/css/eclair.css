@@ -82,3 +82,73 @@ body.eclair .arena-controls { z-index: 4; }
 .in-sub { position: absolute; left: 0; right: 0; bottom: 12%; text-align: center; font-weight: 900; font-size: clamp(1rem, 4vw, 1.6rem); color: #fff; text-shadow: 0 2px 8px #000; opacity: 0; transition: opacity .35s; letter-spacing: 1px; pointer-events: none; }
 .in-sub.on { opacity: 1; }
 .in-skip { position: absolute; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); background: rgba(0,0,0,.45); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 99px; padding: 10px 18px; font-weight: 800; font-size: 1rem; cursor: pointer; }
+.in-gate { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; cursor: pointer;
+  background: radial-gradient(ellipse at center, #3a4527 0%, #12160c 75%); }
+.in-gate h1 { margin: 0; font-size: clamp(2.6rem, 10vw, 5.5rem); line-height: .9; letter-spacing: 4px; color: #efe6c8; text-shadow: 0 4px 0 #000; }
+.in-gate h1 span { color: #ffd34d; }
+.in-gate .btn { max-width: 320px; animation: gatePulse 1.6s ease-in-out infinite; }
+.in-gate small { color: #c4c0a0; font-weight: 700; }
+@keyframes gatePulse { 50% { transform: scale(1.06); } }
+
+/* ---------- Accueil : jouer à gauche, règles à droite ---------- */
+#scr-menu { padding: 0; }
+.ec-home { width: 100%; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; padding: calc(var(--safe-t) + 12px) 14px calc(var(--safe-b) + 24px); box-sizing: border-box; }
+.ec-play { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ec-play .mode-card { width: 100%; box-sizing: border-box; text-align: left; }
+.ec-play .ec-hero { margin: 4px 0 2px; }
+button.ec-big { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 54px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 12px;
+  width: 100%; padding: 16px; border-radius: 20px; cursor: pointer; background: linear-gradient(135deg, #5c6b2e, #3a4520); box-shadow: 0 6px 0 #232a12, 0 10px 24px rgba(0,0,0,.35); color: #fff; }
+button.ec-big:active { transform: translateY(3px); box-shadow: 0 3px 0 #232a12; }
+button.ec-big > span, .ec-big-head > span { grid-row: span 2; font-size: 2.2rem; text-align: center; }
+.ec-big b, .ec-big-head b { font-size: 1.2rem; }
+.ec-big small, .ec-big-head small { color: #d7d3b6; font-size: .82rem; }
+#btnVsAI { background: linear-gradient(135deg, #b3261e, #6e130d); box-shadow: 0 6px 0 #3e0a06, 0 10px 24px rgba(0,0,0,.35); }
+.ec-card2 { display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box; padding: 16px; border-radius: 20px; background: var(--card); box-shadow: 0 8px 22px rgba(0,0,0,.3); color: #fff; }
+.ec-big-head { display: grid; grid-template-columns: 54px 1fr; column-gap: 12px; align-items: center; }
+.ec-card2 .join-row { display: flex; gap: 8px; }
+.ec-card2 .join-row input { flex: 1; min-width: 0; }
+.ec-card2 .join-row .btn { width: auto; flex: 0 0 auto; padding-left: 18px; padding-right: 18px; margin: 0; }
+.ec-card2 .btn { margin: 0; }
+.ec-foot { display: flex; gap: 10px; flex-wrap: wrap; }
+.ec-foot > * { flex: 1; min-width: 150px; margin: 0; }
+
+.ec-guide { background: rgba(10, 12, 6, .55); border: 1px solid rgba(255,255,255,.08); border-radius: 22px; padding: 16px; min-width: 0; text-align: left; }
+.gd-head { margin: 0 0 12px; font-size: 1.35rem; color: #ffd34d; }
+.gd-rules { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.gd-rule { background: var(--card); border-radius: 14px; padding: 10px 12px; }
+.gd-rule b { font-size: .98rem; }
+.gd-rule p { margin: 4px 0 0; font-size: .88rem; line-height: 1.4; color: #e6e2cc; }
+.gd-title { margin: 22px 0 6px; font-size: 1.25rem; color: #ffd34d; }
+.gd-grp { margin: 16px 0 8px; font-size: 1rem; color: #efe6c8; border-bottom: 1px solid rgba(255,255,255,.12); padding-bottom: 4px; }
+.gd-grp small { color: var(--muted); font-weight: 600; }
+.gd-cards { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.gd-card { display: flex; gap: 12px; background: var(--card); border-radius: 14px; padding: 8px; align-items: flex-start; }
+.gd-img { position: relative; flex: 0 0 88px; height: 88px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, #e8dfbf, #a99f78); overflow: hidden; }
+.gd-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gd-rank { position: absolute; left: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #ffd34d; color: #6e130d; border: 2px solid #6e130d; font: 900 .8rem/20px system-ui; text-align: center; font-style: normal; }
+.gd-n { position: absolute; right: 4px; bottom: 4px; background: rgba(0,0,0,.7); color: #fff; border-radius: 8px; padding: 1px 6px; font: 800 .75rem system-ui; font-style: normal; }
+.gd-txt { min-width: 0; }
+.gd-txt b { font-size: 1rem; }
+.gd-txt p { margin: 3px 0 0; font-size: .82rem; line-height: 1.35; color: #e6e2cc; display: flex; gap: 6px; }
+.gd-txt p span { flex: 0 0 auto; }
+
+/* écran large : deux colonnes, chacune défile seule */
+@media (min-width: 900px) {
+  #scr-menu { overflow: hidden; }
+  .ec-home { flex-direction: row; height: 100vh; height: 100dvh; padding-top: 16px; padding-bottom: 16px; align-items: stretch; }
+  .ec-play { flex: 0 0 400px; overflow-y: auto; padding-right: 4px; }
+  .ec-guide { flex: 1; overflow-y: auto; }
+  .gd-rules { grid-template-columns: 1fr 1fr; }
+  .gd-cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
+/* règles pendant la partie */
+.ec-rules-card { max-width: 980px; max-height: 92vh; display: flex; flex-direction: column; padding: 14px; text-align: left; }
+.ec-rules-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ec-rules-top h2 { margin: 0; color: #ffd34d; font-size: 1.2rem; }
+.ec-guide.in-modal { overflow-y: auto; flex: 1; padding: 10px; }
+@media (min-width: 700px) { .ec-guide.in-modal .gd-rules { grid-template-columns: 1fr 1fr; } .ec-guide.in-modal .gd-cards { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+.ec-card2 .join-row { margin-top: 0; }
+#p2Name { letter-spacing: normal; text-transform: none; font-size: 1rem; font-weight: 700; text-align: left; padding-left: 14px; }
+#joinCode { letter-spacing: 4px; font-size: 1.2rem; }
+.ec-hero p { text-align: left; }
