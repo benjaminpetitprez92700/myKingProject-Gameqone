@@ -288,6 +288,31 @@ function rawModel(id, side, faceUp, style, bare) {
   return root;
 }
 
+// plateau (cadre, cases, croix, ligne de front) en quelques objets
+export function boardMesh(G) {
+  const tb = new THREE.Group();
+  const frame = add(tb, new THREE.BoxGeometry(W + 0.7, 0.32, G.H + 0.7), mat('#4a3520', { r: 0.7 }), 0, -0.2, 0);
+  frame.castShadow = false;
+  add(tb, new THREE.BoxGeometry(W + 0.2, 0.06, G.H + 0.2), mat('#2a1d10'), 0, -0.04, 0).castShadow = false;
+  const light = mat('#d8cfa8', { r: 0.85 }), darkM = mat('#4a5733', { r: 0.9 }), red = mat('#7d1b14', { r: 0.8 }), cream = mat('#f3e6c8', { r: 0.6 });
+  const tileG = box(0.97, 0.06, 0.97);
+  for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+    const cx = x - W / 2 + 0.5, cz = y - G.H / 2 + 0.5;
+    if (isCross(G, x, y)) {
+      add(tb, tileG, red, cx, -0.03, cz).castShadow = false;
+      // chevaux de frise : deux poutres croisées
+      add(tb, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, Math.PI / 4, 0);
+      add(tb, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, -Math.PI / 4, 0);
+      continue;
+    }
+    add(tb, tileG, isDark(x, y) ? darkM : light, cx, -0.03, cz).castShadow = false;
+  }
+  // ligne de front (pointillés)
+  for (let x = 0; x < W * 2; x++) add(tb, box(0.3, 0.012, 0.035), mat('#a01e14'), -W / 2 + 0.25 + x * 0.5, 0.002, 0).castShadow = false;
+  optimize(tb); tb.traverse((o) => { o.castShadow = false; });
+  return tb;
+}
+
 // ---------- Étiquettes (grade) ----------
 const texCache = new Map();
 function badgeTex(txt, side, warn) {
@@ -476,26 +501,7 @@ export class Stratego3D extends Stratego {
     this.boardMode = G.mode;
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color: '#25301a', roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.36; ground.receiveShadow = true; root.add(ground);
-    const tb = new THREE.Group();
-    const frame = add(tb, new THREE.BoxGeometry(W + 0.7, 0.32, G.H + 0.7), mat('#4a3520', { r: 0.7 }), 0, -0.2, 0);
-    frame.castShadow = false;
-    add(tb, new THREE.BoxGeometry(W + 0.2, 0.06, G.H + 0.2), mat('#2a1d10'), 0, -0.04, 0).castShadow = false;
-    const light = mat('#d8cfa8', { r: 0.85 }), darkM = mat('#4a5733', { r: 0.9 }), red = mat('#7d1b14', { r: 0.8 }), cream = mat('#f3e6c8', { r: 0.6 });
-    const tileG = box(0.97, 0.06, 0.97);
-    for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
-      const cx = x - W / 2 + 0.5, cz = y - G.H / 2 + 0.5;
-      if (isCross(G, x, y)) {
-        add(tb, tileG, red, cx, -0.03, cz).castShadow = false;
-        // chevaux de frise : deux poutres croisées
-        add(tb, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, Math.PI / 4, 0);
-        add(tb, box(0.95, 0.09, 0.1), cream, cx, 0.06, cz, 0, -Math.PI / 4, 0);
-        continue;
-      }
-      add(tb, tileG, isDark(x, y) ? darkM : light, cx, -0.03, cz).castShadow = false;
-    }
-    // ligne de front (pointillés)
-    for (let x = 0; x < W * 2; x++) add(tb, box(0.3, 0.012, 0.035), mat('#a01e14'), -W / 2 + 0.25 + x * 0.5, 0.002, 0).castShadow = false;
-    optimize(tb); tb.traverse((o) => { o.castShadow = false; }); root.add(tb);
+    root.add(boardMesh(G));
     // zone de placement
     const zm = new THREE.MeshBasicMaterial({ color: '#ffd34d', transparent: true, opacity: 0.16, depthWrite: false });
     this.zone = new THREE.Mesh(new THREE.PlaneGeometry(W, G.R), zm); this.zone.rotation.x = -Math.PI / 2; root.add(this.zone);

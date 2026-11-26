@@ -152,3 +152,21 @@ button.ec-big > span, .ec-big-head > span { grid-row: span 2; font-size: 2.2rem;
 #p2Name { letter-spacing: normal; text-transform: none; font-size: 1rem; font-weight: 700; text-align: left; padding-left: 14px; }
 #joinCode { letter-spacing: 4px; font-size: 1.2rem; }
 .ec-hero p { text-align: left; }
+
+/* écran large : la colonne « Jouer » tient sans défiler */
+@media (min-width: 900px) {
+  .ec-play { overflow: hidden; gap: clamp(6px, 1.2vh, 12px); justify-content: space-between; }
+  .ec-play .ec-hero { gap: 14px; margin: 0; }
+  .ec-play .ec-hero canvas { width: clamp(64px, 11vh, 110px); height: clamp(64px, 11vh, 110px); }
+  .ec-play .ec-title { font-size: clamp(1.7rem, 4.6vh, 2.6rem); }
+  .ec-play .ec-hero p { margin: 2px 0 0; }
+  .ec-play .mode-card { padding: clamp(8px, 1.4vh, 14px) 14px; gap: clamp(4px, .8vh, 8px); }
+  .ec-play .mode-card .field input { padding-top: clamp(6px, 1vh, 12px); padding-bottom: clamp(6px, 1vh, 12px); }
+  .ec-play .mode-card h3 { font-size: .95rem; }
+  .ec-play .seg button { padding-top: clamp(6px, 1vh, 10px); padding-bottom: clamp(6px, 1vh, 10px); }
+  .ec-play button.ec-big { padding: clamp(8px, 1.5vh, 16px) 16px; }
+  .ec-play .ec-card2 { padding: clamp(8px, 1.5vh, 16px) 16px; gap: clamp(6px, 1vh, 10px); }
+  .ec-play .ec-big-head > span, .ec-play button.ec-big > span { font-size: clamp(1.5rem, 4vh, 2.2rem); }
+  .ec-play .ec-card2 .btn, .ec-play .join-row input { padding-top: clamp(6px, 1.1vh, 12px); padding-bottom: clamp(6px, 1.1vh, 12px); min-height: 0; }
+  .ec-play .ec-foot .btn, .ec-play .ec-foot .toggle { padding-top: clamp(4px, .8vh, 10px); padding-bottom: clamp(4px, .8vh, 10px); min-height: 0; }
+}
