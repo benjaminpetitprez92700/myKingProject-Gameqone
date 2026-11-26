@@ -4,14 +4,14 @@ import { W, BY_ID, geom, xy, isCross, isDark, isFighter, objectives, army, fight
 import { fx } from '../fx.js';
 import { portrait } from './art.js';
 
-const ARMY = [{ main: '#b3261e', dark: '#6e130d', light: '#e8574d' }, { main: '#1f4e9e', dark: '#0f2a5a', light: '#4f86d9' }];
+export const ARMY = [{ main: '#b3261e', dark: '#6e130d', light: '#e8574d' }, { main: '#1f4e9e', dark: '#0f2a5a', light: '#4f86d9' }];
 const VALUE = {
   corpsfranc: 2, sapeur: 4, parachutiste: 3.5, caporal: 4, sergent: 5, adjudant: 6, adjudantchef: 7, souslieutenant: 8, lieutenant: 9,
   capitaine: 10, commandant: 11, ltcolonel: 12, colonel: 13, general: 16, espion: 6, drapeau: 400, plan: 400,
   mine: 3, bomberet: 2.5, v1: 7, dca: 4, citerne: 6, barrage: 3, bombardier: 8,
 };
 const AI_NOISE = { facile: 4, moyen: 1.2, difficile: 0.3 };
-const HELP = {
+export const HELP = {
   corpsfranc: '1re avance : bond jusqu\'à 3 cases', sapeur: 'désamorce mines et bombes', parachutiste: 'saute 1 fois chez l\'ennemi puis attaque',
   general: 'seul un espion peut le prendre', espion: 'seul capable de prendre le Général', drapeau: 'à protéger !', plan: 'à protéger !',
   mine: 'fait sauter qui l\'attaque', bomberet: 'se pose 1 fois chez l\'ennemi', v1: 'glisse puis file droit devant', dca: 'abat les bombardiers',

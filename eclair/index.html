@@ -13,9 +13,10 @@
 <link rel="stylesheet" href="css/eclair.css">
 </head>
 <body class="eclair">
+<div class="intro3d" id="intro"></div>
 
 <!-- Menu -->
-<section class="screen active" id="scr-menu">
+<section class="screen" id="scr-menu">
   <div class="center-col ec-menu">
     <div class="ec-hero">
       <canvas id="heroArt" width="220" height="220"></canvas>
@@ -37,6 +38,8 @@
       <div class="seg" id="placeSeg"><button data-v="auto">🎲 Automatique</button><button data-v="manuel">✋ À la main</button></div>
       <h3 style="margin-top:12px">Dessins des vignettes</h3>
       <div class="seg" id="styleSeg"><button data-v="moderne">🪖 Moderne</button><button data-v="france">🇫🇷 France 1914</button></div>
+      <h3 style="margin-top:12px">Affichage du plateau</h3>
+      <div class="seg" id="viewSeg"><button data-v="3d">🧊 3D (figurines)</button><button data-v="2d">🗺️ 2D (vignettes)</button></div>
     </div>
 
     <div class="ec-modes">
@@ -60,6 +63,7 @@
 
     <div class="ec-foot">
       <button class="btn ghost" id="btnRules">❓ Règles du jeu</button>
+      <button class="btn ghost" id="btnIntro">🎬 Revoir l'intro</button>
       <label class="toggle"><span>🔊 Sons</span><input type="checkbox" id="setSound" checked><i></i></label>
     </div>
   </div>
@@ -68,13 +72,18 @@
 <!-- Partie -->
 <section class="screen game" id="scr-arena">
   <canvas id="arena"></canvas>
-  <div class="hud top">
-    <button class="icon-btn glass" id="btnPause" aria-label="Pause">❚❚</button>
-    <button class="icon-btn glass help-ingame" id="btnHelp" aria-label="Règles du jeu">?</button>
-    <div class="hud-title"><b>Guerre Éclair</b></div>
-    <div class="chip glass" id="arenaChip"></div>
+  <div class="ec-side left">
+    <div class="ec-btns">
+      <button class="icon-btn glass" id="btnPause" aria-label="Pause">❚❚</button>
+      <button class="icon-btn glass help-ingame" id="btnHelp" aria-label="Règles du jeu">?</button>
+      <button class="icon-btn glass" id="btnView" aria-label="Recentrer la vue">🎥</button>
+    </div>
+    <div class="ec-score" id="score0"></div>
   </div>
-  <div class="score-bar" id="scoreBar"></div>
+  <div class="ec-side right">
+    <div class="chip glass" id="arenaChip"></div>
+    <div class="ec-score" id="score1"></div>
+  </div>
   <div class="toast" id="toast"></div>
   <div class="arena-controls" id="arenaControls"></div>
 </section>

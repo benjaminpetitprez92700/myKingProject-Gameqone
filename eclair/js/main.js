@@ -1,15 +1,17 @@
 // Guerre Éclair : appli dédiée (menu, partie, jeu en ligne).
 import { Stratego } from './stratego/game.js';
+import { Stratego3D } from './stratego/game3d.js';
 import { portrait } from './stratego/art.js';
 import { hostGame, joinGame } from './net.js';
 import { showTutorial } from './tutorial.js';
+import { playIntro } from './intro.js';
 import { fx, setPrefs, unlockAudio, audio } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const KEY = 'guerre-eclair';
 
 // ---------- Réglages (dans le navigateur) ----------
-const DEF = { name: '', p2: '', rules: 'complet', place: 'auto', style: 'france', level: 'moyen', sound: true, tuto: false, stats: { ai: { w: 0, l: 0 }, duo: 0, online: { w: 0, l: 0 } } };
+const DEF = { name: '', p2: '', rules: 'complet', place: 'auto', style: 'france', level: 'moyen', view: '3d', sound: true, tuto: false, stats: { ai: { w: 0, l: 0 }, duo: 0, online: { w: 0, l: 0 } } };
 let S;
 try { S = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { S = { ...DEF }; }
 S.stats = { ...DEF.stats, ...S.stats };
@@ -24,7 +26,7 @@ function seg(id, key) {
   el.onclick = (e) => { const b = e.target.closest('button'); if (!b) return; fx.tap(); S[key] = b.dataset.v; save(); paint(); };
   paint();
 }
-seg('rulesSeg', 'rules'); seg('placeSeg', 'place'); seg('styleSeg', 'style'); seg('levelSeg', 'level');
+seg('rulesSeg', 'rules'); seg('placeSeg', 'place'); seg('styleSeg', 'style'); seg('levelSeg', 'level'); seg('viewSeg', 'view');
 $('myName').value = S.name; $('p2Name').value = S.p2;
 $('myName').oninput = (e) => { S.name = e.target.value.trim(); save(); };
 $('p2Name').oninput = (e) => { S.p2 = e.target.value.trim(); save(); };
@@ -58,7 +60,11 @@ function show(id) { document.querySelectorAll('.screen').forEach((s) => s.classL
 // ---------- Partie ----------
 let game = null, opts = null, toastTimer = 0;
 const hud = {
-  setScore: (html) => { $('scoreBar').innerHTML = html; },
+  setScore: (html) => {
+    const t = document.createElement('div'); t.innerHTML = html;
+    const sp = t.querySelectorAll('.sp');
+    $('score0').innerHTML = sp[0]?.outerHTML || ''; $('score1').innerHTML = sp[1]?.outerHTML || '';
+  },
   setChip: (txt) => { $('arenaChip').textContent = txt; },
   toast: (txt, ms = 1400) => {
     const el = $('toast'); el.textContent = txt; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
@@ -92,8 +98,11 @@ function startGame(o) {
   closeModal('mdResult'); closeModal('mdPause');
   hud.controls(null);
   game?.stop();
-  game = new Stratego($('arena'), hud);
-  game.start(opts);
+  let G3 = S.view !== '2d';
+  if (G3) { try { const t = document.createElement('canvas'); G3 = !!(t.getContext('webgl2') || t.getContext('webgl')); } catch (e) { G3 = false; } }
+  document.body.classList.toggle('view3d', G3);
+  game = G3 ? new Stratego3D($('arena'), hud) : new Stratego($('arena'), hud);
+  game.start(opts); window.__eg = game;
   watchSize($('arena'));
   if (!S.tuto) { S.tuto = true; save(); help(); }
 }
@@ -124,6 +133,7 @@ $('btnVsAI').onclick = () => { fx.tap(); startGame({ mode: 'ai', level: S.level 
 $('btnDuo').onclick = () => { fx.tap(); startGame({ mode: 'duo', level: S.level, p2: S.p2 || 'Joueur 2' }); };
 $('btnRules').onclick = () => { fx.tap(); showTutorial('stratego'); };
 $('btnPause').onclick = () => { fx.tap(); pause(); };
+$('btnView').onclick = () => { fx.tap(); game?.resetView?.(); };
 $('btnHelp').onclick = () => { fx.tap(); help(); };
 $('btnHelpPause').onclick = () => { fx.tap(); showTutorial('stratego'); };
 $('btnResume').onclick = () => { fx.tap(); resume(); };
@@ -155,6 +165,11 @@ $('btnJoin').onclick = async () => {
 };
 $('joinCode').oninput = (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
 $('onCancel').onclick = () => { fx.tap(); req?.cancel(); req = null; closeModal('mdOnline'); };
+
+// ---------- Animation d'arrivée ----------
+function intro() { show(''); playIntro($('intro'), () => show('scr-menu'), S.style); }
+$('btnIntro').onclick = () => { fx.tap(); intro(); };
+if (new URLSearchParams(location.search).has('nointro')) show('scr-menu'); else intro();
 
 // ---------- Divers ----------
 document.addEventListener('visibilitychange', () => {

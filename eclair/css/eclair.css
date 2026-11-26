@@ -25,3 +25,60 @@ body.eclair { --bg: #12160c; --bg2: #1c2213; --card: #2a3220; --muted: #c4c0a0; 
 .ec-modes .mode-card, .ec-menu > .mode-card { width: 100%; box-sizing: border-box; text-align: left; }
 .ec-modes .seg button { min-width: 0; padding-left: 4px; padding-right: 4px; }
 .ec-hero > div { text-align: left; }
+
+/* ---------- Partie : panneaux sur les côtés, plateau au maximum ---------- */
+.arena3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+body.eclair #arena { z-index: 1; }
+body.eclair:not(.view3d) #btnView { display: none; }
+.ec-side { position: absolute; top: calc(var(--safe-t) + 8px); z-index: 3; display: flex; flex-direction: column; gap: 8px; pointer-events: none; max-width: calc(50% - 12px); }
+.ec-side > * { pointer-events: auto; }
+.ec-side.left { left: 8px; align-items: flex-start; }
+.ec-side.right { right: 8px; align-items: flex-end; }
+.ec-btns { display: flex; gap: 6px; }
+.ec-btns .icon-btn { width: 40px; height: 40px; font-size: 1rem; }
+.ec-side .chip { height: 40px; padding: 0 12px; font-size: .85rem; }
+.ec-score .sp { background: rgba(10, 12, 6, .7); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-radius: 12px; padding: 5px 10px; border: 1.5px solid transparent; min-width: 0; }
+.ec-score .sp.on { border-color: var(--accent); box-shadow: 0 0 14px rgba(255, 211, 77, .35); }
+.ec-score b { display: block; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.ec-score .balls { font-size: .72rem; margin-top: 2px; }
+.ec-side.right .ec-score .sp { text-align: right; }
+.ec-side.right .ec-score b { margin-left: auto; }
+.army-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; }
+/* téléphone en hauteur : panneaux compacts en haut à gauche / droite */
+@media (orientation: portrait) {
+  .ec-side { flex-direction: row; align-items: flex-start; }
+  .ec-side.left { flex-direction: row; }
+  .ec-side.right { flex-direction: row-reverse; }
+  .ec-btns { flex-direction: column; }
+  .ec-score b { max-width: 96px; }
+}
+/* écran large : colonnes à gauche et à droite, actions à droite */
+@media (orientation: landscape) {
+  .ec-side { bottom: 10px; width: clamp(130px, 13vw, 200px); }
+  .ec-score, .ec-score .sp { width: 100%; box-sizing: border-box; }
+  .ec-side .chip { max-width: 100%; white-space: normal; height: auto; min-height: 40px; padding: 6px 12px; }
+  body.eclair .arena-controls { left: auto; right: 8px; bottom: 10px; width: clamp(130px, 13vw, 200px); padding: 0; }
+  body.eclair .arena-controls .setup-ctl { max-width: none; }
+  body.eclair .arena-controls .setup-btns { flex-direction: column; }
+}
+body.eclair .toast { z-index: 4; }
+body.eclair .arena-controls { z-index: 4; }
+
+/* ---------- Animation d'arrivée ---------- */
+.intro3d { position: fixed; inset: 0; z-index: 50; display: none; background: #000; overflow: hidden; }
+.intro3d.show { display: block; }
+.intro3d.out { opacity: 0; transition: opacity .45s; }
+.intro3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.in-flash { position: absolute; inset: 0; background: #e8f2ff; opacity: 0; pointer-events: none; }
+.in-flash.on { animation: inFlash .9s ease-out forwards; }
+@keyframes inFlash { 0% { opacity: 0; } 8% { opacity: 1; } 20% { opacity: .2; } 28% { opacity: .9; } 100% { opacity: 0; } }
+.in-title { position: absolute; left: 0; right: 0; top: 18%; text-align: center; opacity: 0; transform: scale(1.6); pointer-events: none; }
+.in-title.on { animation: inTitle 1s cubic-bezier(.2,1.4,.4,1) .1s forwards; }
+@keyframes inTitle { to { opacity: 1; transform: scale(1); } }
+.in-title h1 { margin: 0; font-size: clamp(2.8rem, 11vw, 6.5rem); line-height: .9; letter-spacing: 4px; color: #efe6c8; text-shadow: 0 4px 0 #000, 0 0 30px rgba(0,0,0,.6); }
+.in-title h1 span { color: #ffd34d; }
+.in-title p { margin: 14px 0 0; font-weight: 800; font-size: clamp(.9rem, 3.4vw, 1.3rem); color: #fff; text-shadow: 0 2px 6px #000; }
+.in-bolt { font-size: clamp(2.5rem, 10vw, 5rem); filter: drop-shadow(0 0 18px #ffd34d); }
+.in-sub { position: absolute; left: 0; right: 0; bottom: 12%; text-align: center; font-weight: 900; font-size: clamp(1rem, 4vw, 1.6rem); color: #fff; text-shadow: 0 2px 8px #000; opacity: 0; transition: opacity .35s; letter-spacing: 1px; pointer-events: none; }
+.in-sub.on { opacity: 1; }
+.in-skip { position: absolute; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); background: rgba(0,0,0,.45); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 99px; padding: 10px 18px; font-weight: 800; font-size: 1rem; cursor: pointer; }
