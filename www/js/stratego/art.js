@@ -1,6 +1,10 @@
 // Portraits illustrés des pièces de Guerre Éclair : un personnage par grade, aux couleurs de son armée.
 
 import { paintFrance } from './art_fr.js';
+import { paintGear, paintParachute, GEAR } from './art_gear.js';
+
+// vignettes qui reprennent le dessin d'un autre grade
+const ALIAS = { sapeur: 'demineur', corpsfranc: 'eclaireur', caporal: 'sergent', adjudant: 'sergent', adjudantchef: 'sergent' };
 
 const SKIN = ['#f2c9a0', '#e0ac7e', '#c68c5b', '#8d5a3b', '#f5d3b5'];
 const cache = new Map();
@@ -50,7 +54,7 @@ function paint(g, id, S, army) {
   }
 
   const skin = SKIN[(id.length * 7 + (army.side || 0) * 3) % SKIN.length];
-  const officer = ['marechal', 'general', 'colonel', 'commandant', 'capitaine', 'lieutenant'].includes(id);
+  const officer = ['marechal', 'general', 'colonel', 'ltcolonel', 'commandant', 'capitaine', 'lieutenant', 'souslieutenant'].includes(id);
   const uni = id === 'espion' ? '#b9a27a' : army.main, uniD = id === 'espion' ? '#8a7650' : army.dark;
 
   // buste / uniforme
@@ -107,7 +111,7 @@ function paint(g, id, S, army) {
     // képi
     g.fillStyle = uniD; g.beginPath(); g.moveTo(L(31), L(34)); g.lineTo(L(34), L(10)); g.quadraticCurveTo(L(50), L(4), L(66), L(10)); g.lineTo(L(69), L(34)); g.closePath(); g.fill();
     g.fillStyle = '#16181d'; g.beginPath(); g.ellipse(L(50), L(34), L(22), L(4.5), 0, 0, Math.PI); g.fill();
-    const stripes = { marechal: 7, general: 0, colonel: 5, commandant: 4, capitaine: 3, lieutenant: 2 }[id];
+    const stripes = { marechal: 7, general: 0, colonel: 5, ltcolonel: 5, souslieutenant: 1, commandant: 4, capitaine: 3, lieutenant: 2 }[id];
     g.fillStyle = gold;
     if (id === 'marechal' || id === 'general') {
       g.fillRect(L(32), L(26), L(36), L(6));
@@ -142,7 +146,12 @@ export function portrait(id, army, px) {
   const key = `${id}|${army.main}|${army.style || ''}|${px}`;
   if (cache.has(key)) return cache.get(key);
   const c = document.createElement('canvas'); c.width = c.height = px;
-  (army.style === 'france' ? paintFrance : paint)(c.getContext('2d'), id, px, army);
+  const g = c.getContext('2d');
+  if (GEAR.includes(id)) paintGear(g, id, px, army, army.style === 'france');
+  else {
+    (army.style === 'france' ? paintFrance : paint)(g, ALIAS[id] || id, px, army);
+    if (id === 'parachutiste') paintParachute(g, px);
+  }
   cache.set(key, c);
   return c;
 }

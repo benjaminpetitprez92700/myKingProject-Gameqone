@@ -20,7 +20,7 @@ function stratego() {
   if (!strategoImg) {
     try {
       const A = { main: '#1f4e9e', dark: '#0f2a5a', light: '#4f86d9', side: 1, style: 'france' };
-      strategoImg = portrait('marechal', A, 180).toDataURL();
+      strategoImg = portrait('general', A, 180).toDataURL();
     } catch (e) { strategoImg = ''; }
   }
   return `<svg viewBox="0 0 120 120">
@@ -28,8 +28,8 @@ function stratego() {
     <text x="92" y="40" text-anchor="middle" font-size="24" font-weight="900" fill="#ffd0c8" transform="rotate(10 92 32)">?</text>
     <g class="bob"><rect x="10" y="30" width="66" height="74" rx="10" fill="#1f4e9e" stroke="#0f2a5a" stroke-width="2"/>
     ${strategoImg ? `<clipPath id="sgc"><rect x="15" y="35" width="56" height="56" rx="6"/></clipPath><image href="${strategoImg}" x="15" y="35" width="56" height="56" clip-path="url(#sgc)"/>` : ''}
-    <rect x="15" y="86" width="56" height="14" rx="3" fill="rgba(0,0,0,.6)"/><text x="43" y="97" text-anchor="middle" font-size="9.5" font-weight="900" fill="#fff">MARÉCHAL</text>
-    <circle cx="70" cy="34" r="9" fill="#ffd34d" stroke="#7a5200" stroke-width="1.5"/><text x="70" y="38" text-anchor="middle" font-size="11" font-weight="900" fill="#3a2600">10</text></g>
+    <rect x="15" y="86" width="56" height="14" rx="3" fill="rgba(0,0,0,.6)"/><text x="43" y="97" text-anchor="middle" font-size="9.5" font-weight="900" fill="#fff">GÉNÉRAL</text>
+    <circle cx="70" cy="34" r="9" fill="#ffd34d" stroke="#7a5200" stroke-width="1.5"/><text x="70" y="38" text-anchor="middle" font-size="11" font-weight="900" fill="#3a2600">14</text></g>
     <path d="M80 72 l6 -8 l2 8 l8 -4 l-4 8 l9 2 l-9 4 l4 8 l-8 -4 l-2 8 l-5 -8 Z" fill="#ffb703" stroke="#e85d04" stroke-width="1.5"/>
     <rect x="96" y="76" width="3" height="34" fill="#5b4a33"/><path d="M99 77 q8 -3 16 2 v11 q-8 -4 -16 -1 Z" fill="#c8202a"/></svg>`;
 }

@@ -59,7 +59,7 @@ export function paintFrance(g, id, S, army) {
   }
 
   const skin = ['#f3c9a4', '#eab892', '#f6d2b4'][(id.length + (army.side || 0)) % 3];
-  const officer = ['marechal', 'general', 'colonel', 'commandant', 'capitaine', 'lieutenant'].includes(id);
+  const officer = ['marechal', 'general', 'colonel', 'ltcolonel', 'commandant', 'capitaine', 'lieutenant', 'souslieutenant'].includes(id);
   const spy = id === 'espion';
 
   // capote / buste
@@ -129,8 +129,8 @@ export function paintFrance(g, id, S, army) {
       for (let k = 0; k < 5; k++) { g.save(); g.translate(L(36 + k * 7), L(27)); g.rotate(k % 2 ? 0.5 : -0.5); g.beginPath(); g.ellipse(0, 0, L(3.2), L(1.6), 0, 0, Math.PI * 2); g.fillStyle = GOLD; g.fill(); g.restore(); }
       for (let k = 0; k < (id === 'marechal' ? 5 : 3); k++) star(g, L(50 - ((id === 'marechal' ? 4 : 2) * 3.2) + k * 6.4), L(15), L(2.4), '#f1f1f4');
     } else {
-      const n = { colonel: 5, commandant: 4, capitaine: 3, lieutenant: 2 }[id];
-      for (let k = 0; k < n; k++) { g.fillStyle = id === 'commandant' && k % 2 ? '#e6e6ea' : GOLD; g.fillRect(L(33.5), L(30 - k * 3.4 - (k ? 6 : 0)), L(33), L(1.6)); }
+      const n = { colonel: 5, ltcolonel: 5, commandant: 4, capitaine: 3, lieutenant: 2, souslieutenant: 1 }[id];
+      for (let k = 0; k < n; k++) { g.fillStyle = (id === 'commandant' || id === 'ltcolonel') && k % 2 ? '#e6e6ea' : GOLD; g.fillRect(L(33.5), L(30 - k * 3.4 - (k ? 6 : 0)), L(33), L(1.6)); }
       // soutache verticale
       g.fillStyle = GOLD; g.fillRect(L(49.3), L(5), L(1.4), L(17));
     }

@@ -86,7 +86,7 @@ const GAMES = [
   { id: 'rami', name: 'Rami à Contrats', tag: 'Brelans, suites et 6 contrats', cls: 'g-rami', badge: 'NOUVEAU' },
   { id: 'golfcards', name: 'Cartes Cachées', tag: 'Le moins de points gagne (Golf)', cls: 'g-golfcards', badge: 'NOUVEAU' },
   { id: 'tower', name: 'Défense du Royaume', tag: 'Tower defense : protège ton château', cls: 'g-tower', badge: 'NOUVEAU' },
-  { id: 'stratego', name: 'Guerre Éclair', tag: 'Stratégie : trouve le drapeau ennemi', cls: 'g-stratego', badge: 'NOUVEAU' },
+  { id: 'stratego', name: 'Guerre Éclair', tag: 'Prends le drapeau et le plan secret', cls: 'g-stratego', badge: 'NOUVEAU' },
   { id: 'math', name: 'Calcul mental', tag: 'Additions, soustractions, tables', cls: 'g-math', badge: 'NOUVEAU' },
   { id: 'dictee', name: 'Dictée', tag: 'Écoute le mot et écris-le', cls: 'g-dictee', badge: 'NOUVEAU' },
   { id: 'chess', name: 'Échecs', tag: "Contre l'ordi ou à deux", cls: 'g-chess', badge: 'NOUVEAU' },
@@ -99,7 +99,7 @@ const ARENA = {
   rami: { cls: Rami, name: 'Rami à Contrats', desc: "Rami traditionnel en 6 manches : à chaque manche, un contrat à poser (brelans, suites de 4). Ensuite, complète les combinaisons sur la table et vide ta main en premier ! Le moins de points gagne." },
   golfcards: { cls: CardGolf, name: 'Cartes Cachées', desc: "Le Golf, jeu de cartes traditionnel : chacun a une grille de cartes cachées (taille au choix, 2 à 4 joueurs). Pioche, échange et retourne tes cartes pour avoir le moins de points. Une colonne de cartes identiques vaut 0 ! 6 manches." },
   tower: { cls: TowerDefense, name: 'Défense du Royaume', desc: '' },
-  stratego: { cls: Stratego, name: 'Guerre Éclair', desc: "Règles du Stratego : 40 pièces cachées par camp. Déplace-toi d'une case, attaque pour révéler les pièces : la plus forte gagne. Capture le drapeau ennemi pour gagner. Attention aux bombes !" },
+  stratego: { cls: Stratego, name: 'Guerre Éclair', desc: "Le grand jeu de stratégie militaire : 48 vignettes cachées par camp (36 en règle facile). Attaque pour découvrir qui est en face : le grade le plus fort gagne, l'attaquant l'emporte à égalité. Bombardiers, D.C.A., parachutistes, mines, bombes volantes… Prends le drapeau et le plan secret de l'adversaire !" },
   chess: { cls: Chess, name: 'Échecs', desc: "Toutes les règles officielles : roque, prise en passant, promotion, échec et mat, pat. Touche une pièce pour voir ses coups possibles, puis touche la case d'arrivée." },
   snake: { cls: Snake, name: 'Serpent', desc: '' },
   pog: { cls: Pog, name: 'Pogs', desc: "Chacun met 5 pogs face cachée dans la pile. Vise, dose ta frappe dans la zone verte : tous les pogs qui retombent face visible sont à toi. Celui qui en gagne le plus remporte la partie." },
@@ -328,6 +328,9 @@ const render = {
     $('optRoom').style.display = curArena === 'pog' ? '' : 'none';
     $('optAssist').style.display = curArena === 'chess' ? '' : 'none';
     $('optStyle').style.display = curArena === 'stratego' ? '' : 'none';
+    $('optRules').style.display = curArena === 'stratego' ? '' : 'none';
+    const sru = prof().settings.strategoRules || 'complet';
+    $('rulesSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.dataset.s === sru));
     $('optGolf').style.display = curArena === 'golfcards' ? '' : 'none';
     $('optOnline').style.display = ONLINE_GAMES.includes(curArena) ? '' : 'none';
     $('optBataille').style.display = curArena === 'bataille' ? '' : 'none';
@@ -462,6 +465,10 @@ $('ptsSeg').onclick = (e) => {
 $('styleSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
   fx.tap(); $('styleSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
   const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoStyle: b.dataset.s } });
+}));
+$('rulesSeg').querySelectorAll('button').forEach((b) => (b.onclick = () => {
+  fx.tap(); $('rulesSeg').querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+  const p = prof(); store.updateProfile(p.id, { settings: { ...p.settings, strategoRules: b.dataset.s } });
 }));
 // ---------- Jeu en ligne ----------
 const ONLINE_GAMES = ['chess', 'stratego', 'bataille'];
@@ -644,7 +651,7 @@ function startArena(opts) {
   $('btnRetry').style.display = '';
   const p = prof();
   arenaOpts = {
-    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', golf: golfCfg(), length: prof().settings.batailleLen || 'normale',
+    ...opts, game: curArena, target: ptsTarget, room: prof().settings.pogRoom || 'random', assistant: curArena === 'chess' && !!prof().settings.chessAssist, pieceStyle: prof().settings.strategoStyle || 'france', rules: prof().settings.strategoRules || 'complet', golf: golfCfg(), length: prof().settings.batailleLen || 'normale',
     names: opts.names || [p.name, opts.mode === 'ai' ? 'Ordi' : opts.p2],
     colors: [p.color, '#ff006e'], color: p.color,
   };
