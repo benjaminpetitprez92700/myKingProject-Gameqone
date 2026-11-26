@@ -33,7 +33,7 @@ export class Stratego {
     if (this.vw < 50) { requestAnimationFrame(() => this.running && this.resize()); return; }
     this.canvas.width = Math.round(this.vw * dpr); this.canvas.height = Math.round(this.vh * dpr);
     if (!this.G) return;
-    const top = 128, bottom = 100, G = this.G;
+    const top = 128, bottom = 118, G = this.G;
     this.cell = Math.floor(Math.min((this.vw - 12) / W, (this.vh - top - bottom) / G.H));
     this.bw = this.cell * W; this.bh = this.cell * G.H;
     this.ox = Math.round((this.vw - this.bw) / 2);
